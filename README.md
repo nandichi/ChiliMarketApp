@@ -1,97 +1,175 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Chili Market App
 
-# Getting Started
+Een professionele React Native app voor Chili Market met native navigatie, splash screen en moderne UI componenten.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## Features
 
-## Step 1: Start Metro
+✅ **Native App Ervaring**
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+- Professionele splash screen met animaties
+- Tab navigatie met 5 hoofdsecties
+- Custom design systeem met Chili Market branding
+- Native UI componenten in plaats van alleen WebView
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+✅ **Schermen**
 
-```sh
-# Using npm
+- **Home**: Zoekbalk, categorieën, uitgelichte producten, snelle acties
+- **Categorieën**: Grid layout met alle productcategorieën
+- **Zoeken**: Geavanceerde zoekfunctie met filters
+- **Winkelwagen**: Volledig functionele winkelwagen met checkout
+- **Profiel**: Gebruikersprofiel met statistieken en instellingen
+
+✅ **Design & UX**
+
+- Consistent kleurenpalet geïnspireerd door chili/spice thema
+- Material Design iconen
+- Responsive layout voor alle schermformaten
+- Soepele animaties en transities
+- Professional shadows en elevation
+
+✅ **Technische Features**
+
+- TypeScript voor type safety
+- Gestructureerde mappenindeling
+- Modulaire componenten
+- Native splash screen configuratie
+- WebView integratie optie voor volledige website
+
+## Installatie
+
+### Prerequisites
+
+- Node.js (>= 18)
+- React Native development environment
+- iOS Simulator (voor iOS development)
+- Android Studio (voor Android development)
+
+### Setup
+
+1. **Installeer dependencies:**
+
+```bash
+npm install
+```
+
+2. **iOS Setup:**
+
+```bash
+cd ios && pod install && cd ..
+```
+
+3. **Start Metro:**
+
+```bash
 npm start
-
-# OR using Yarn
-yarn start
 ```
 
-## Step 2: Build and run your app
+4. **Run iOS:**
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+```bash
+npm run ios
+```
 
-### Android
+5. **Run Android:**
 
-```sh
-# Using npm
+```bash
 npm run android
-
-# OR using Yarn
-yarn android
 ```
+
+## App Architectuur
+
+```
+src/
+├── components/          # Herbruikbare UI componenten
+│   └── SplashScreen.tsx
+├── constants/           # App constanten en configuratie
+│   └── colors.ts
+├── navigation/          # Navigatie setup
+│   ├── AppNavigator.tsx
+│   └── TabNavigator.tsx
+├── screens/             # App schermen
+│   ├── HomeScreen.tsx
+│   ├── CategoriesScreen.tsx
+│   ├── SearchScreen.tsx
+│   ├── CartScreen.tsx
+│   ├── ProfileScreen.tsx
+│   └── WebViewScreen.tsx
+└── types/               # TypeScript type definities
+    └── navigation.ts
+```
+
+## Kleuren Schema
+
+De app gebruikt een consistent kleurenpalet:
+
+- **Primary**: #E53E3E (Chili rood)
+- **Secondary**: #FF6B35 (Warm oranje)
+- **Accent**: #FFA500 (Goud)
+- **Success**: #38A169 (Groen)
+- **Text**: #2D3748 (Donkergrijs)
+
+## Native Features
+
+- ✅ Splash screen met logo animatie
+- ✅ Tab navigatie met iconen
+- ✅ Native headers en status bar styling
+- ✅ Material Design componenten
+- ✅ Responsive grid layouts
+- ✅ Native scrolling en gestures
+- ✅ Professional shadows en elevations
+
+## WebView Integratie
+
+De app bevat nog steeds een WebView optie voor gebruikers die de volledige website willen bekijken:
+
+- Intelligent fallback naar chili-market.com
+- Custom user agent voor app identificatie
+- Optimized voor mobile ervaring
+
+## Development
+
+### Code Style
+
+- TypeScript strict mode
+- Functional components met hooks
+- Consistent naming conventions
+- Modulaire architectuur
+
+### Testing
+
+```bash
+npm test
+```
+
+### Linting
+
+```bash
+npm run lint
+```
+
+## Building for Production
 
 ### iOS
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
+```bash
+npm run build:ios
 ```
 
-Then, and every time you update your native dependencies, run:
+### Android
 
-```sh
-bundle exec pod install
+```bash
+npm run build:android
 ```
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+## Volgende Stappen
 
-```sh
-# Using npm
-npm run ios
+1. **Backend Integratie**: Koppel echte API's voor producten en bestellingen
+2. **Authenticatie**: Implementeer login/register functionaliteit
+3. **Push Notifications**: Voeg push notifications toe voor bestellingen
+4. **Offline Support**: Implementeer offline caching
+5. **Analytics**: Voeg analytics tracking toe
+6. **Deep Linking**: Implementeer deep linking support
 
-# OR using Yarn
-yarn ios
-```
+## Support
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
-
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
-
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+Voor vragen of problemen, neem contact op met het development team.
