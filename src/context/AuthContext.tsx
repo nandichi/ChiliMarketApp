@@ -156,8 +156,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Load saved credentials on app start
   useEffect(() => {
-    loadSavedCredentials();
-  }, []);
+    let isMounted = true;
+    
+    const initializeAuth = async () => {
+      if (isMounted) {
+        await loadSavedCredentials();
+      }
+    };
+    
+    initializeAuth();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Alleen bij mount uitvoeren
 
   const isRateLimited = useCallback(() => {
     const timeSinceLastAttempt = Date.now() - state.lastLoginAttempt;
@@ -219,13 +231,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
           dispatch({ type: 'LOGOUT' });
         }
+      } else {
+        // Geen opgeslagen credentials, zet loading uit
+        dispatch({ type: 'SET_LOADING', payload: { isLoading: false } });
       }
     } catch (error) {
       console.error('Error loading saved credentials:', error);
-    } finally {
       dispatch({ type: 'SET_LOADING', payload: { isLoading: false } });
     }
-  }, [dispatch, api, state.isGuest, state.isAuthenticated, isRateLimited]);
+  }, [state.isGuest, state.isAuthenticated, isRateLimited, api]);
 
   const login = useCallback(async (username: string, password: string) => {
     try {
@@ -275,30 +289,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = useCallback(async () => {
     try {
-      console.log('Logout: Starting logout process...');
-      
       // Clear saved credentials
       await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
-      console.log('Logout: AsyncStorage credentials cleared');
-
-      // Verify credentials are actually cleared
-      const remainingAuth = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
-      if (remainingAuth) {
-        console.error('WARNING: Credentials still found after removal attempt!');
-      } else {
-        console.log('Logout: Verified credentials are completely cleared');
-      }
 
       // Logout from API (clears JWT token)
       api.logout();
-      console.log('Logout: API logout completed');
 
-      // Dispatch logout - this will trigger navigation to login screen
+      // Dispatch logout
       dispatch({ type: 'LOGOUT' });
-      console.log('Logout: State updated to logged out - user will see login screen');
     } catch (error) {
       console.error('Error during logout:', error);
-      // Altijd de state updaten, ook bij errors
       dispatch({ type: 'LOGOUT' });
     }
   }, [dispatch, api]);
@@ -332,6 +332,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       dispatch({ type: 'CONTINUE_AS_GUEST' });
       console.log('Continue as guest: Guest mode activated');
+      
+      // Kleine vertraging om de state update te laten verwerken
+      await new Promise(resolve => setTimeout(resolve, 100));
     } catch (error) {
       console.error('Error clearing credentials for guest mode:', error);
       // Alsnog doorgaan als gast, ook als credentials wissen faalt
@@ -356,6 +359,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Reset to login state (not guest, not authenticated)
       dispatch({ type: 'LOGOUT' });
       console.log('Go to login: State reset - will show login screen');
+      
+      // Kleine vertraging om de state update te laten verwerken
+      await new Promise(resolve => setTimeout(resolve, 100));
     } catch (error) {
       console.error('Error going to login:', error);
       // Alsnog naar login state gaan, ook bij errors

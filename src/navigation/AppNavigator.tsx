@@ -10,19 +10,14 @@ import { AuthProvider, useAuth } from '../context/AuthContext';
 const Stack = createStackNavigator();
 
 function AuthenticatedApp() {
-  const { isAuthenticated, isGuest, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isGuest, isLoading } = useAuth();
   const [showSplash, setShowSplash] = useState(true);
 
   const handleSplashEnd = React.useCallback(() => {
     setShowSplash(false);
   }, []);
 
-  const loginScreenOptions = React.useMemo(() => ({
-    headerShown: false,
-    cardStyle: { backgroundColor: Colors.background },
-  }), []);
-
-  const mainScreenOptions = React.useMemo(() => ({
+  const screenOptions = React.useMemo(() => ({
     headerShown: false,
     cardStyle: { backgroundColor: Colors.background },
   }), []);
@@ -32,27 +27,20 @@ function AuthenticatedApp() {
     return <SplashScreen onAnimationEnd={handleSplashEnd} />;
   }
 
-  // Show login screen if not authenticated and not guest
-  if (!isAuthenticated && !isGuest && !authLoading) {
-    return (
-      <NavigationContainer>
-        <Stack.Navigator screenOptions={loginScreenOptions}>
-          <Stack.Screen name="Login" component={LoginScreen} />
-        </Stack.Navigator>
-      </NavigationContainer>
-    );
-  }
-
   // Show loading during auth check
-  if (authLoading) {
+  if (isLoading) {
     return <SplashScreen onAnimationEnd={() => {}} />;
   }
 
-  // Show main app if authenticated or guest
+  // Simple navigation logic
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={mainScreenOptions}>
-        <Stack.Screen name="Main" component={TabNavigator} />
+      <Stack.Navigator screenOptions={screenOptions}>
+        {!isAuthenticated && !isGuest ? (
+          <Stack.Screen name="Login" component={LoginScreen} />
+        ) : (
+          <Stack.Screen name="Main" component={TabNavigator} />
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );

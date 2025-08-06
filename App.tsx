@@ -18,6 +18,8 @@ function App(): React.JSX.Element {
         barStyle="light-content"
         backgroundColor={Colors.primary}
         translucent={false}
+        animated={true}
+        hidden={false}
       />
       <AppNavigator />
     </SafeAreaProvider>

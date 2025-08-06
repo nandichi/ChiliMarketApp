@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Platform, View, TouchableOpacity, Text, StyleSheet, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,8 +11,6 @@ import { useAuth } from '../context/AuthContext';
 import WebViewScreen from '../screens/WebViewScreen';
 import LogoutScreenComponent from '../screens/LogoutScreen';
 import LoginTabScreenComponent from '../screens/LoginTabScreen';
-// DISABLED: BuddyBoss native scherm tijdelijk uitgeschakeld
-// import BuddyBossScreen from '../screens/BuddyBossScreen';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
@@ -29,9 +27,7 @@ const ProfielWebViewScreen = React.memo(() => {
   const { user } = useAuth();
   const profileUrl = user?.username 
     ? `https://chili-market.com/leden/${user.username}/`
-    : 'https://chili-market.com/leden/'; // Fallback if no username
-    
-  console.log('ProfielWebViewScreen: profileUrl =', profileUrl, 'for user:', user?.username);
+    : 'https://chili-market.com/leden/';
   
   return <WebViewScreen url={profileUrl} />;
 });
@@ -50,8 +46,6 @@ const LogoutScreen = React.memo(() => {
   
   return <LogoutScreenComponent />;
 });
-
-
 
 export default function TabNavigator() {
   const insets = useSafeAreaInsets();
@@ -85,7 +79,7 @@ export default function TabNavigator() {
     };
   }, []);
 
-  const screenOptions = React.useMemo(() => ({ route }: { route: any }) => ({
+  const screenOptions = useMemo(() => ({ route }: { route: any }) => ({
     tabBarIcon: getTabBarIconForRoute({ route }),
     tabBarActiveTintColor: Colors.primary,
     tabBarInactiveTintColor: Colors.gray400,
@@ -96,14 +90,14 @@ export default function TabNavigator() {
       paddingBottom: Platform.OS === 'ios' ? insets.bottom : 8,
       paddingTop: 8,
       height: Platform.OS === 'ios' ? 60 + insets.bottom : 70,
-      position: 'absolute',
+      position: 'absolute' as const,
       bottom: 0,
       left: 0,
       right: 0,
     },
     tabBarLabelStyle: {
       fontSize: 12,
-      fontWeight: '600',
+      fontWeight: '600' as const,
     },
     headerStyle: {
       backgroundColor: Colors.primary,
@@ -114,15 +108,13 @@ export default function TabNavigator() {
     },
     headerTintColor: Colors.white,
     headerTitleStyle: {
-      fontWeight: '700',
+      fontWeight: '700' as const,
       fontSize: 18,
     },
   }), [insets, getTabBarIconForRoute]);
 
   return (
-    <Tab.Navigator
-      screenOptions={screenOptions}
-    >
+    <Tab.Navigator screenOptions={screenOptions}>
       <Tab.Screen
         name="Home"
         component={HomeWebViewScreen}
@@ -140,7 +132,6 @@ export default function TabNavigator() {
           headerShown: true,
         }}
       />
-      {/* Only show Profile tab for authenticated users */}
       {isAuthenticated && (
         <Tab.Screen
           name="Profiel"

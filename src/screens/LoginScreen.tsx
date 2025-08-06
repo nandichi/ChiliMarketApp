@@ -119,12 +119,6 @@ export default function LoginScreen() {
         </View>
         <Text style={styles.appName}>Chili Market</Text>
         <Text style={styles.subtitle}>Inloggen op je account</Text>
-        <View style={styles.tempAuthNotice}>
-          <Icon name="info" size={16} color={Colors.warning} />
-          <Text style={styles.tempAuthText}>
-            Tijdelijke authenticatie actief (JWT plugin niet beschikbaar)
-          </Text>
-        </View>
       </View>
 
       <View style={styles.formContainer}>

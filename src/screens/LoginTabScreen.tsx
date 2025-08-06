@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,13 +12,19 @@ import { useAuth } from '../context/AuthContext';
 
 export default function LoginTabScreen() {
   const { goToLogin } = useAuth();
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleLogin = async () => {
+    if (isProcessing) return; // Voorkom dubbele clicks
+    
     try {
+      setIsProcessing(true);
       console.log('LoginTabScreen: User wants to login, clearing guest mode');
       await goToLogin();
     } catch (error) {
       console.error('LoginTabScreen: Error going to login:', error);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -36,11 +42,14 @@ export default function LoginTabScreen() {
         </Text>
 
         <TouchableOpacity
-          style={styles.loginButton}
+          style={[styles.loginButton, isProcessing && styles.loginButtonDisabled]}
           onPress={handleLogin}
+          disabled={isProcessing}
         >
           <Icon name="login" size={24} color={Colors.white} />
-          <Text style={styles.loginButtonText}>Inloggen</Text>
+          <Text style={styles.loginButtonText}>
+            {isProcessing ? 'Bezig...' : 'Inloggen'}
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -63,11 +72,12 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     padding: 20,
     marginBottom: 32,
-    shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 6,
+    // Vereenvoudigde shadow styling
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   title: {
     fontSize: 28,
@@ -92,12 +102,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    // Vereenvoudigde shadow styling
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 2,
     minWidth: 200,
+  },
+  loginButtonDisabled: {
+    backgroundColor: Colors.textSecondary,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   loginButtonText: {
     color: Colors.white,
