@@ -9,6 +9,8 @@ import React, {
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import WordPressAPI, { WordPressUser } from '../services/WordPressAPI';
+import NativeFeaturesService from '../services/NativeFeaturesService';
+import LocalizationService from '../services/LocalizationService';
 // DISABLED: BuddyBoss API tijdelijk uitgeschakeld
 // import BuddyBossAPI from '../services/BuddyBossAPI';
 
@@ -22,6 +24,15 @@ interface AuthState {
   lastLoginAttempt: number;
   loadingMessage: string;
   justLoggedOut: boolean;
+  // Face ID related states
+  isLocked: boolean;
+  biometricSupported: boolean;
+  biometricEnabled: boolean;
+  authenticationRequired: boolean;
+  backgroundTime: number | null;
+  hasPerformedInitialBiometricCheck: boolean;
+  biometricFailureCount: number;
+  lastFailedAttempt: number | null;
 }
 
 type AuthAction =
@@ -33,7 +44,17 @@ type AuthAction =
   | { type: 'SET_LOADING'; payload: { isLoading: boolean; message?: string } }
   | { type: 'SET_RATE_LIMITED'; payload: boolean }
   | { type: 'CONTINUE_AS_GUEST' }
-  | { type: 'CLEAR_LOGOUT_FLAG' };
+  | { type: 'CLEAR_LOGOUT_FLAG' }
+  | { type: 'SET_BIOMETRIC_SUPPORT'; payload: boolean }
+  | { type: 'SET_BIOMETRIC_ENABLED'; payload: boolean }
+  | { type: 'SET_LOCKED'; payload: boolean }
+  | { type: 'SET_AUTH_REQUIRED'; payload: boolean }
+  | { type: 'SET_BACKGROUND_TIME'; payload: number | null }
+  | { type: 'UNLOCK_SUCCESS' }
+  | { type: 'UNLOCK_FAILURE'; payload: string }
+  | { type: 'SET_INITIAL_BIOMETRIC_CHECK_DONE' }
+  | { type: 'INCREMENT_BIOMETRIC_FAILURE' }
+  | { type: 'RESET_BIOMETRIC_FAILURE' };
 
 interface AuthContextType extends AuthState {
   login: (username: string, password: string) => Promise<void>;
@@ -43,6 +64,13 @@ interface AuthContextType extends AuthState {
   clearError: () => void;
   clearLogoutFlag: () => void;
   api: WordPressAPI;
+  // Face ID methods
+  setBiometricEnabled: (enabled: boolean) => Promise<boolean>;
+  authenticateWithBiometric: () => Promise<boolean>;
+  setBackgroundTime: () => Promise<void>;
+  checkAuthRequired: () => Promise<boolean>;
+  unlock: () => Promise<boolean>;
+  initializeBiometric: () => Promise<void>;
   // DISABLED: BuddyBoss API tijdelijk uitgeschakeld
   // buddyBossAPI: BuddyBossAPI;
 }
@@ -57,6 +85,15 @@ const initialState: AuthState = {
   lastLoginAttempt: 0,
   loadingMessage: '',
   justLoggedOut: false,
+  // Face ID initial states
+  isLocked: false,
+  biometricSupported: false,
+  biometricEnabled: false,
+  authenticationRequired: false,
+  backgroundTime: null,
+  hasPerformedInitialBiometricCheck: false,
+  biometricFailureCount: 0,
+  lastFailedAttempt: null,
 };
 
 const authReducer = (state: AuthState, action: AuthAction): AuthState => {
@@ -79,6 +116,8 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
         error: null,
         rateLimited: false,
         justLoggedOut: false,
+        isLocked: false,
+        authenticationRequired: false,
       };
     case 'LOGIN_FAILURE':
       return {
@@ -134,6 +173,64 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
         ...state,
         justLoggedOut: false,
       };
+    case 'SET_BIOMETRIC_SUPPORT':
+      return {
+        ...state,
+        biometricSupported: action.payload,
+      };
+    case 'SET_BIOMETRIC_ENABLED':
+      return {
+        ...state,
+        biometricEnabled: action.payload,
+      };
+    case 'SET_LOCKED':
+      return {
+        ...state,
+        isLocked: action.payload,
+        authenticationRequired: action.payload,
+      };
+    case 'SET_AUTH_REQUIRED':
+      return {
+        ...state,
+        authenticationRequired: action.payload,
+      };
+    case 'SET_BACKGROUND_TIME':
+      return {
+        ...state,
+        backgroundTime: action.payload,
+      };
+    case 'UNLOCK_SUCCESS':
+      return {
+        ...state,
+        isLocked: false,
+        authenticationRequired: false,
+        error: null,
+        backgroundTime: null, // Clear background time after successful unlock
+        biometricFailureCount: 0, // Reset failure count on success
+        lastFailedAttempt: null,
+      };
+    case 'UNLOCK_FAILURE':
+      return {
+        ...state,
+        error: action.payload,
+      };
+    case 'SET_INITIAL_BIOMETRIC_CHECK_DONE':
+      return {
+        ...state,
+        hasPerformedInitialBiometricCheck: true,
+      };
+    case 'INCREMENT_BIOMETRIC_FAILURE':
+      return {
+        ...state,
+        biometricFailureCount: state.biometricFailureCount + 1,
+        lastFailedAttempt: Date.now(),
+      };
+    case 'RESET_BIOMETRIC_FAILURE':
+      return {
+        ...state,
+        biometricFailureCount: 0,
+        lastFailedAttempt: null,
+      };
     default:
       return state;
   }
@@ -157,15 +254,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Load saved credentials on app start
   useEffect(() => {
     let isMounted = true;
-    
+
     const initializeAuth = async () => {
       if (isMounted) {
+        await initializeBiometric();
         await loadSavedCredentials();
       }
     };
-    
+
     initializeAuth();
-    
+
     return () => {
       isMounted = false;
     };
@@ -178,7 +276,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const loadSavedCredentials = useCallback(async () => {
     try {
-      dispatch({ type: 'SET_LOADING', payload: { isLoading: true, message: 'Laden...' } });
+      dispatch({
+        type: 'SET_LOADING',
+        payload: { isLoading: true, message: 'Laden...' },
+      });
 
       // Skip auto-login als gebruiker al als gast doorgaat of al ingelogd is
       if (state.isGuest) {
@@ -241,51 +342,54 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [state.isGuest, state.isAuthenticated, isRateLimited, api]);
 
-  const login = useCallback(async (username: string, password: string) => {
-    try {
-      // Controleer rate limiting
-      if (isRateLimited()) {
-        throw new Error(
-          'Te veel inlogpogingen. Wacht 20 minuten en probeer opnieuw.',
+  const login = useCallback(
+    async (username: string, password: string) => {
+      try {
+        // Controleer rate limiting
+        if (isRateLimited()) {
+          throw new Error(
+            'Te veel inlogpogingen. Wacht 20 minuten en probeer opnieuw.',
+          );
+        }
+
+        dispatch({ type: 'LOGIN_START', payload: 'Inloggen...' });
+
+        const user = await api.login(username, password);
+
+        // Update BuddyBoss API token
+        const token = api.getAuthToken();
+        if (token) {
+          // buddyBossAPI.setToken(token); // DISABLED: BuddyBoss API tijdelijk uitgeschakeld
+        }
+
+        // Save credentials for auto-login (JWT tokens will be handled by API class)
+        await AsyncStorage.setItem(
+          AUTH_STORAGE_KEY,
+          JSON.stringify({ username, password }),
         );
+
+        dispatch({ type: 'LOGIN_SUCCESS', payload: user });
+      } catch (error) {
+        let errorMessage =
+          error instanceof Error ? error.message : 'Login failed';
+
+        // Detecteer rate limiting
+        if (
+          errorMessage.includes('te veel') ||
+          errorMessage.includes('too many') ||
+          errorMessage.includes('retries')
+        ) {
+          dispatch({ type: 'SET_RATE_LIMITED', payload: true });
+          errorMessage =
+            'Te veel inlogpogingen. Probeer het over 20 minuten opnieuw.';
+        }
+
+        dispatch({ type: 'LOGIN_FAILURE', payload: errorMessage });
+        throw error;
       }
-
-      dispatch({ type: 'LOGIN_START', payload: 'Inloggen...' });
-
-      const user = await api.login(username, password);
-
-      // Update BuddyBoss API token
-      const token = api.getAuthToken();
-      if (token) {
-        // buddyBossAPI.setToken(token); // DISABLED: BuddyBoss API tijdelijk uitgeschakeld
-      }
-
-      // Save credentials for auto-login (JWT tokens will be handled by API class)
-      await AsyncStorage.setItem(
-        AUTH_STORAGE_KEY,
-        JSON.stringify({ username, password }),
-      );
-
-      dispatch({ type: 'LOGIN_SUCCESS', payload: user });
-    } catch (error) {
-      let errorMessage =
-        error instanceof Error ? error.message : 'Login failed';
-
-      // Detecteer rate limiting
-      if (
-        errorMessage.includes('te veel') ||
-        errorMessage.includes('too many') ||
-        errorMessage.includes('retries')
-      ) {
-        dispatch({ type: 'SET_RATE_LIMITED', payload: true });
-        errorMessage =
-          'Te veel inlogpogingen. Probeer het over 20 minuten opnieuw.';
-      }
-
-      dispatch({ type: 'LOGIN_FAILURE', payload: errorMessage });
-      throw error;
-    }
-  }, [dispatch, api, isRateLimited]);
+    },
+    [dispatch, api, isRateLimited],
+  );
 
   const logout = useCallback(async () => {
     try {
@@ -314,25 +418,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const continueAsGuest = useCallback(async () => {
     try {
       console.log('Continue as guest: Starting guest mode process...');
-      
+
       // Clear saved credentials wanneer als gast doorgaan wordt gekozen
       await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
       console.log('Continue as guest: AsyncStorage credentials cleared');
-      
+
       // Clear API token
       api.logout();
       console.log('Continue as guest: API logout completed');
-      
+
       // Ensure complete state reset first, then set guest mode
       dispatch({ type: 'LOGOUT' });
       console.log('Continue as guest: State reset to logged out');
-      
+
       // Small delay to ensure logout state is processed
       await new Promise(resolve => setTimeout(resolve, 100));
-      
+
       dispatch({ type: 'CONTINUE_AS_GUEST' });
       console.log('Continue as guest: Guest mode activated');
-      
+
       // Kleine vertraging om de state update te laten verwerken
       await new Promise(resolve => setTimeout(resolve, 100));
     } catch (error) {
@@ -346,20 +450,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const goToLogin = useCallback(async () => {
     try {
-      console.log('Go to login: Clearing guest mode and redirecting to login...');
-      
+      console.log(
+        'Go to login: Clearing guest mode and redirecting to login...',
+      );
+
       // Clear saved credentials
       await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
       console.log('Go to login: AsyncStorage credentials cleared');
-      
+
       // Clear API token
       api.logout();
       console.log('Go to login: API logout completed');
-      
+
       // Reset to login state (not guest, not authenticated)
       dispatch({ type: 'LOGOUT' });
       console.log('Go to login: State reset - will show login screen');
-      
+
       // Kleine vertraging om de state update te laten verwerken
       await new Promise(resolve => setTimeout(resolve, 100));
     } catch (error) {
@@ -369,18 +475,177 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [dispatch, api]);
 
-  const value: AuthContextType = React.useMemo(() => ({
-    ...state,
-    login,
-    logout,
-    continueAsGuest,
-    goToLogin,
-    clearError,
-    clearLogoutFlag,
-    api,
-    // DISABLED: BuddyBoss API tijdelijk uitgeschakeld
-    // buddyBossAPI,
-  }), [state, login, logout, continueAsGuest, goToLogin, clearError, clearLogoutFlag, api]);
+  // Face ID Methods
+  const initializeBiometric = useCallback(async () => {
+    try {
+      if (NativeFeaturesService.isAvailable()) {
+        const biometricInfo =
+          await NativeFeaturesService.checkBiometricSupport();
+        dispatch({
+          type: 'SET_BIOMETRIC_SUPPORT',
+          payload: biometricInfo.isSupported,
+        });
+
+        if (biometricInfo.isSupported) {
+          const isEnabled =
+            await NativeFeaturesService.isBiometricLockEnabled();
+          dispatch({ type: 'SET_BIOMETRIC_ENABLED', payload: isEnabled });
+        }
+      }
+    } catch (error) {
+      console.error('Failed to initialize biometric:', error);
+    }
+  }, []);
+
+  const setBiometricEnabled = useCallback(
+    async (enabled: boolean): Promise<boolean> => {
+      try {
+        const success = await NativeFeaturesService.setBiometricLockEnabled(
+          enabled,
+        );
+        if (success) {
+          dispatch({ type: 'SET_BIOMETRIC_ENABLED', payload: enabled });
+        }
+        return success;
+      } catch (error) {
+        console.error('Failed to set biometric enabled:', error);
+        return false;
+      }
+    },
+    [],
+  );
+
+  const authenticateWithBiometric = useCallback(async (): Promise<boolean> => {
+    try {
+      const result = await NativeFeaturesService.authenticateForUnlock();
+      if (result.success) {
+        dispatch({ type: 'UNLOCK_SUCCESS' });
+        dispatch({ type: 'RESET_BIOMETRIC_FAILURE' });
+        return true;
+      } else {
+        // SECURITY: Increment failure count for ANY failure (including cancel)
+        dispatch({ type: 'INCREMENT_BIOMETRIC_FAILURE' });
+        const errorMessage =
+          result.error ||
+          LocalizationService.t('features.biometricAuth.failed');
+        dispatch({ type: 'UNLOCK_FAILURE', payload: errorMessage });
+        return false;
+      }
+    } catch (error) {
+      console.error('Biometric authentication failed:', error);
+      // SECURITY: Also increment on exceptions
+      dispatch({ type: 'INCREMENT_BIOMETRIC_FAILURE' });
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : LocalizationService.t('features.biometricAuth.failed');
+      dispatch({ type: 'UNLOCK_FAILURE', payload: errorMessage });
+      return false;
+    }
+  }, []);
+
+  const setBackgroundTime = useCallback(async (): Promise<void> => {
+    try {
+      const timestamp = Date.now();
+      await NativeFeaturesService.setBackgroundTime(timestamp);
+      dispatch({ type: 'SET_BACKGROUND_TIME', payload: timestamp });
+    } catch (error) {
+      console.error('Failed to set background time:', error);
+    }
+  }, []);
+
+  const checkAuthRequired = useCallback(async (): Promise<boolean> => {
+    return new Promise(resolve => {
+      // Use setTimeout to ensure we get the latest state
+      setTimeout(async () => {
+        try {
+          // Get fresh state reference
+          const currentState = state;
+
+          if (!currentState.biometricEnabled || !currentState.isAuthenticated) {
+            resolve(false);
+            return;
+          }
+
+          // Avoid checking if already locked to prevent loops
+          if (currentState.isLocked || currentState.authenticationRequired) {
+            resolve(currentState.authenticationRequired);
+            return;
+          }
+
+          const shouldRequireAuth =
+            await NativeFeaturesService.shouldRequireAuth();
+
+          if (shouldRequireAuth) {
+            dispatch({ type: 'SET_AUTH_REQUIRED', payload: true });
+            dispatch({ type: 'SET_LOCKED', payload: true });
+          }
+
+          resolve(shouldRequireAuth);
+        } catch (error) {
+          console.error('Failed to check auth requirement:', error);
+          resolve(false);
+        }
+      }, 0);
+    });
+  }, [state]); // Now we can safely depend on state
+
+  const unlock = useCallback(async (): Promise<boolean> => {
+    try {
+      if (!state.authenticationRequired) {
+        return true;
+      }
+
+      const success = await authenticateWithBiometric();
+      if (success) {
+        // Clear background time both locally and in native storage
+        await NativeFeaturesService.clearBackgroundTime();
+        dispatch({ type: 'SET_BACKGROUND_TIME', payload: null });
+      }
+      return success;
+    } catch (error) {
+      console.error('Failed to unlock:', error);
+      return false;
+    }
+  }, [state.authenticationRequired, authenticateWithBiometric]);
+
+  const value: AuthContextType = React.useMemo(
+    () => ({
+      ...state,
+      login,
+      logout,
+      continueAsGuest,
+      goToLogin,
+      clearError,
+      clearLogoutFlag,
+      api,
+      // Face ID methods
+      setBiometricEnabled,
+      authenticateWithBiometric,
+      setBackgroundTime,
+      checkAuthRequired,
+      unlock,
+      initializeBiometric,
+      // DISABLED: BuddyBoss API tijdelijk uitgeschakeld
+      // buddyBossAPI,
+    }),
+    [
+      state,
+      login,
+      logout,
+      continueAsGuest,
+      goToLogin,
+      clearError,
+      clearLogoutFlag,
+      api,
+      setBiometricEnabled,
+      authenticateWithBiometric,
+      setBackgroundTime,
+      checkAuthRequired,
+      unlock,
+      initializeBiometric,
+    ],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

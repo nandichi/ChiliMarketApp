@@ -1,0 +1,110 @@
+{
+  "common": {
+    "cancel": "Cancel",
+    "ok": "OK",
+    "error": "Error",
+    "success": "Success",
+    "warning": "Warning",
+    "loading": "Loading...",
+    "retry": "Retry"
+  },
+  "logout": {
+    "title": "Account & Settings",
+    "loggedInAs": "Logged in as:",
+    "logout": "Logout",
+    "loggingOut": "Logging out...",
+    "confirmLogout": "Are you sure you want to logout?",
+    "logoutError": "Logout failed. Please try again."
+  },
+  "sections": {
+    "account": "Account",
+    "security": "Security",
+    "appFeatures": "App Features",
+    "systemInfo": "System & Info",
+    "feedback": "Feedback"
+  },
+  "features": {
+    "biometricAuth": {
+      "faceID": "Face ID Authentication",
+      "touchID": "Touch ID Authentication",
+      "biometric": "Biometric Authentication",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "activatePrompt": "Enable biometric authentication for Chili Market",
+      "activated": "Biometric authentication is enabled",
+      "deactivated": "Biometric authentication is disabled",
+      "failed": "Authentication failed",
+      "lockTitle": "Lock with Face ID",
+      "lockSubtitle": "Lock the app when closing",
+      "unlockPrompt": "Unlock Chili Market with Face ID",
+      "unlockFallback": "Enter your passcode",
+      "problemCta": "Problems with Face ID?",
+      "settingsHelp": "Go to Settings to enable Face ID",
+      "biometryChanged": "Face ID has changed. Please log in again.",
+      "tooManyAttempts": "Too many failed attempts. Try again later.",
+      "lockoutTitle": "App locked",
+      "lockoutMessage": "Too many failed Face ID attempts. Use your passcode to unlock."
+    },
+    "appSettings": {
+      "title": "App Settings",
+      "subtitle": "Open system settings"
+    },
+    "shareApp": {
+      "title": "Share App",
+      "subtitle": "Share the app with friends",
+      "text": "Try Chili Market - The best marketplace app!"
+    },
+    "filePicker": {
+      "title": "Pick File",
+      "subtitle": "Select a file",
+      "fileSelected": "File Selected",
+      "fileName": "File: %s",
+      "fileSize": "Size: %d bytes"
+    },
+    "hapticsTest": {
+      "title": "Haptics Test",
+      "subtitle": "Test vibrations and feedback",
+      "completed": "Test completed!"
+    },
+    "cameraPermission": {
+      "title": "Camera Permission",
+      "subtitle": "Manage camera access",
+      "granted": "Access granted!",
+      "denied": "Access denied",
+      "status": "Current status: %s"
+    },
+    "photosPermission": {
+      "title": "Photos Permission",
+      "subtitle": "Manage photos access",
+      "granted": "Access granted!",
+      "denied": "Access denied",
+      "status": "Current status: %s"
+    },
+    "appInfo": {
+      "title": "App Information",
+      "subtitle": "%s (%s)"
+    },
+    "appReview": {
+      "title": "Rate App",
+      "subtitle": "Give a rating in the App Store",
+      "requested": "Review requested (not always visible)"
+    },
+    "supportEmail": {
+      "title": "Support Email",
+      "subtitle": "Send a support request",
+      "subject": "Chili Market Support"
+    },
+    "privacyPolicy": {
+      "title": "Privacy Policy",
+      "subtitle": "View our privacy policy"
+    },
+    "termsOfService": {
+      "title": "Terms of Service",
+      "subtitle": "View the terms of service"
+    }
+  },
+  "errors": {
+    "featureFailed": "%s failed. Please try again.",
+    "notAvailable": "This feature is not available on this platform"
+  }
+}

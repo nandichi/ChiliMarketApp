@@ -1,0 +1,110 @@
+{
+  "common": {
+    "cancel": "Annuleren",
+    "ok": "OK",
+    "error": "Fout",
+    "success": "Succes",
+    "warning": "Waarschuwing",
+    "loading": "Laden...",
+    "retry": "Opnieuw proberen"
+  },
+  "logout": {
+    "title": "Account & Instellingen",
+    "loggedInAs": "Ingelogd als:",
+    "logout": "Uitloggen",
+    "loggingOut": "Uitloggen...",
+    "confirmLogout": "Weet je zeker dat je wilt uitloggen?",
+    "logoutError": "Uitloggen is mislukt. Probeer opnieuw."
+  },
+  "sections": {
+    "account": "Account",
+    "security": "Beveiliging",
+    "appFeatures": "App-functies",
+    "systemInfo": "Systeem & Info",
+    "feedback": "Feedback"
+  },
+  "features": {
+    "biometricAuth": {
+      "faceID": "Face ID Authenticatie",
+      "touchID": "Touch ID Authenticatie",
+      "biometric": "Biometrische Authenticatie",
+      "enabled": "Geactiveerd",
+      "disabled": "Gedeactiveerd",
+      "activatePrompt": "Activeer biometrische authenticatie voor Chili Market",
+      "activated": "Biometrische authenticatie is geactiveerd",
+      "deactivated": "Biometrische authenticatie is gedeactiveerd",
+      "failed": "Authenticatie mislukt",
+      "lockTitle": "Vergrendel met Face ID",
+      "lockSubtitle": "Vergrendel de app bij sluiten",
+      "unlockPrompt": "Ontgrendel Chili Market met Face ID",
+      "unlockFallback": "Voer je wachtwoord in",
+      "problemCta": "Problemen met Face ID?",
+      "settingsHelp": "Ga naar Instellingen om Face ID in te schakelen",
+      "biometryChanged": "Face ID is gewijzigd. Log opnieuw in.",
+      "tooManyAttempts": "Te veel mislukte pogingen. Probeer later opnieuw.",
+      "lockoutTitle": "App vergrendeld",
+      "lockoutMessage": "Te veel mislukte Face ID pogingen. Gebruik je wachtwoord om te ontgrendelen."
+    },
+    "appSettings": {
+      "title": "App Instellingen",
+      "subtitle": "Open systeem instellingen"
+    },
+    "shareApp": {
+      "title": "App Delen",
+      "subtitle": "Deel de app met vrienden",
+      "text": "Probeer Chili Market - De beste marktplaats app!"
+    },
+    "filePicker": {
+      "title": "Bestand Kiezen",
+      "subtitle": "Selecteer een bestand",
+      "fileSelected": "Bestand Geselecteerd",
+      "fileName": "Bestand: %s",
+      "fileSize": "Grootte: %d bytes"
+    },
+    "hapticsTest": {
+      "title": "Haptics Test",
+      "subtitle": "Test trillingen en feedback",
+      "completed": "Test voltooid!"
+    },
+    "cameraPermission": {
+      "title": "Camera Toestemming",
+      "subtitle": "Beheer camera toegang",
+      "granted": "Toegang verleend!",
+      "denied": "Toegang geweigerd",
+      "status": "Huidige status: %s"
+    },
+    "photosPermission": {
+      "title": "Foto's Toestemming",
+      "subtitle": "Beheer foto's toegang",
+      "granted": "Toegang verleend!",
+      "denied": "Toegang geweigerd",
+      "status": "Huidige status: %s"
+    },
+    "appInfo": {
+      "title": "App Informatie",
+      "subtitle": "%s (%s)"
+    },
+    "appReview": {
+      "title": "App Beoordelen",
+      "subtitle": "Geef een beoordeling in de App Store",
+      "requested": "Beoordeling gevraagd (niet altijd zichtbaar)"
+    },
+    "supportEmail": {
+      "title": "Support E-mail",
+      "subtitle": "Stuur een support verzoek",
+      "subject": "Chili Market Support"
+    },
+    "privacyPolicy": {
+      "title": "Privacybeleid",
+      "subtitle": "Bekijk ons privacybeleid"
+    },
+    "termsOfService": {
+      "title": "Gebruiksvoorwaarden",
+      "subtitle": "Bekijk de gebruiksvoorwaarden"
+    }
+  },
+  "errors": {
+    "featureFailed": "%s is mislukt. Probeer opnieuw.",
+    "notAvailable": "Deze functie is niet beschikbaar op dit platform"
+  }
+}

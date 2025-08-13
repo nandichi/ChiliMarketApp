@@ -33,6 +33,12 @@
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string></string>
+	<key>NSCameraUsageDescription</key>
+	<string>Deze app heeft toegang tot de camera nodig om bestanden te kunnen selecteren en te delen.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Deze app heeft toegang tot je foto's nodig om bestanden te kunnen selecteren en te delen.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Gebruik Face ID voor veilige toegang tot je account.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

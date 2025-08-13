@@ -2541,7 +2541,7 @@ PODS:
     - SocketRocket
     - Yoga
   - SocketRocket (0.7.1)
-  - Yoga (1.0.0)
+  - Yoga (0.0.0)
 
 DEPENDENCIES:
   - boost (from `../node_modules/react-native/third-party-podspecs/boost.podspec`)
@@ -2801,7 +2801,7 @@ SPEC CHECKSUMS:
   FBLazyVector: 09f03e4b6f42f955734b64a118f86509cc719427
   fmt: a40bb5bd0294ea969aaaba240a927bd33d878cdd
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
-  hermes-engine: f69e99f0beea1beec8bea9fe767c9e6597599ecd
+  hermes-engine: 4f07404533b808de66cf48ac4200463068d0e95a
   RCT-Folly: 846fda9475e61ec7bcbf8a3fe81edfcaeb090669
   RCTDeprecation: efa5010912100e944a7ac9a93a157e1def1988fe
   RCTRequired: bbc4cf999ddc4a4b076e076c74dd1d39d0254630
@@ -2809,13 +2809,13 @@ SPEC CHECKSUMS:
   React: 4b0b9cb962e694611e5e8a697c1b0300a2510c21
   React-callinvoker: 70f125c17c7132811a6b473946ac5e7ae93b5e57
   React-Core: bab40f5b1f46fe0c5896895a6f333e861a821a81
-  React-CoreModules: 7abab46d93b542427b9f341771169306e411bc6e
+  React-CoreModules: 05647d952e521113c128360633896ba7ba652e82
   React-cxxreact: 2b4bac1ec6eecc6288ac8a6caea6afb42585740e
   React-debug: deb3a146ef717fa3e8f4c23e0288369fe53199b7
   React-defaultsnativemodule: 11e2948787a15d3cf1b66d7f29f13770a177bff7
   React-domnativemodule: 2f4b279acdb2963736fb5de2f585811dd90070b5
-  React-Fabric: cf479c714797a5b85e4a92b6590c8f2b56a42803
-  React-FabricComponents: 24007c89f5068defbd47549b2f262dceeddf2571
+  React-Fabric: 6f8d1a303c96f1d078c14d74c4005bf457e5b782
+  React-FabricComponents: b106410970e9a0c4e592da656c7a7e0947306c23
   React-FabricImage: 1abaf230dfce9b58fdf53c4128f3f40c6e64af6a
   React-featureflags: f7ef58d91079efde3ad223bcca6d197e845d5bcf
   React-featureflagsnativemodule: ae5abc9849d1696f4f8f11ee3744bf5715e032cf
@@ -2835,7 +2835,7 @@ SPEC CHECKSUMS:
   React-logger: 984ebd897afad067555d081deaf03f57c4315723
   React-Mapbuffer: 0c045c844ce6d85cde53e85ab163294c6adad349
   React-microtasksnativemodule: d9499269ad1f484ae71319bac1d9231447f2094e
-  react-native-safe-area-context: 952110621e44ab9da413d73425f32b4b933bc82a
+  react-native-safe-area-context: 68d1363b8354472a961aa6861ba8451beaf9a810
   react-native-splash-screen: 95994222cc95c236bd3cdc59fe45ed5f27969594
   react-native-webview: 9a8ea59197aa76145b8ce72aa3eea69f1e89dd38
   React-NativeModulesApple: 983f3483ef0a3446b56d490f09d579fba2442e17
@@ -2847,7 +2847,7 @@ SPEC CHECKSUMS:
   React-RCTAppDelegate: 0fc048666bda159cd469a6fb9befb04b3fa62be4
   React-RCTBlob: 12d8c699a1f906840113ee8d8bb575e69a05509f
   React-RCTFabric: 01e815845ebc185f44205dcbf50eeb712fec23fe
-  React-RCTFBReactNativeSpec: 166c2e66e69741042d0266db6b2f17234289257b
+  React-RCTFBReactNativeSpec: f57927fb0af6ce2f25c19f8b894e2986138aa89f
   React-RCTImage: a82518168f4ee407913b23ca749ca79ef51959f3
   React-RCTLinking: 7f343b584c36f024f390fea563483568fe763ef6
   React-RCTNetwork: 3165eb757ceb62a7cde4cdad043d63314122e8a3
@@ -2872,10 +2872,10 @@ SPEC CHECKSUMS:
   RNCAsyncStorage: 1f04c8d56558e533277beda29187f571cf7eecb2
   RNGestureHandler: 5e1a1605659c22098719fc2e8aee453fe728f52e
   RNReanimated: bc1ddb7a5352648bcf0d592256069833bf935a46
-  RNScreens: 74bc7fe80b2004e9ed10ab2a94c8eba7bd3a1f6e
+  RNScreens: ee2abe7e0c548eed14e92742e81ed991165c56aa
   RNVectorIcons: ef9b4b0b786053ebdd63ee2972f48de9633ba166
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
-  Yoga: c4eaa20b61a6528708fa57d9041d9d7165e8e7d5
+  Yoga: daa1e4de4b971b977b23bc842aaa3e135324f1f3
 
 PODFILE CHECKSUM: 57e74f36b685b6668beb53ba2462d8ac83977005
 
