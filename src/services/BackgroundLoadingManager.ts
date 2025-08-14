@@ -61,6 +61,7 @@ class BackgroundLoadingManager {
 
   /**
    * Handle app state changes voor intelligente loading
+   * DISABLED: Dit veroorzaakte problemen met accounts en inloggen
    */
   private handleAppStateChange = (nextAppState: AppStateStatus): void => {
     console.log(
@@ -68,67 +69,21 @@ class BackgroundLoadingManager {
       this.currentAppState,
       '->',
       nextAppState,
+      '(background loading disabled)',
     );
 
-    if (
-      this.currentAppState.match(/inactive|background/) &&
-      nextAppState === 'active'
-    ) {
-      // App wordt weer actief - start background loading
-      console.log(
-        '[BackgroundLoadingManager] App became active, starting background loading',
-      );
-      this.startBackgroundLoading();
-    } else if (nextAppState.match(/inactive|background/)) {
-      // App gaat naar background - stop resource-intensive operations
-      console.log(
-        '[BackgroundLoadingManager] App went to background, pausing operations',
-      );
-      this.pauseBackgroundLoading();
-    }
-
+    // Niet meer automatisch background loading starten/stoppen om account/login problemen te voorkomen
     this.currentAppState = nextAppState;
   };
 
   /**
    * Start background loading van alle tab URLs
+   * DISABLED: Dit veroorzaakte problemen met accounts en inloggen
    */
   public async startBackgroundLoading(): Promise<void> {
-    if (this.isLoading) {
-      console.log(
-        '[BackgroundLoadingManager] Background loading already in progress',
-      );
-      return;
-    }
-
-    this.isLoading = true;
-    console.log(
-      '[BackgroundLoadingManager] Starting background loading for',
-      this.TAB_CONFIGS.length,
-      'tabs',
-    );
-
-    try {
-      // Start met preload service
-      await this.preloadService.startPreloading();
-
-      // Sorteer tabs op prioriteit
-      const sortedTabs = [...this.TAB_CONFIGS].sort(
-        (a, b) => a.priority - b.priority,
-      );
-
-      // Load tabs in batches gebaseerd op prioriteit
-      await this.loadTabsInBatches(sortedTabs);
-
-      console.log('[BackgroundLoadingManager] Background loading completed');
-    } catch (error) {
-      console.error(
-        '[BackgroundLoadingManager] Error during background loading:',
-        error,
-      );
-    } finally {
-      this.isLoading = false;
-    }
+    console.log('[BackgroundLoadingManager] Background loading is disabled');
+    // Niet meer automatisch background loading starten om account/login problemen te voorkomen
+    return;
   }
 
   /**
@@ -236,49 +191,34 @@ class BackgroundLoadingManager {
 
   /**
    * Pre-load een specifieke user profile URL
+   * DISABLED: Dit veroorzaakte problemen met accounts en inloggen
    */
   public preloadUserProfile(username: string): void {
-    const profileUrl = `https://chili-market.com/leden/${username}/`;
     console.log(
-      '[BackgroundLoadingManager] Pre-loading user profile:',
-      profileUrl,
+      '[BackgroundLoadingManager] User profile preloading is disabled',
     );
-    this.preloadService.preloadCustomUrl(profileUrl);
+    // Niet meer automatisch user profiles preloaden om account/login problemen te voorkomen
   }
 
   /**
    * Warm cache voor veel gebruikte pagina combinaties
+   * DISABLED: Dit veroorzaakte problemen met accounts en inloggen
    */
   public warmCommonFlows(): void {
-    console.log('[BackgroundLoadingManager] Warming common user flows');
-
-    // Veelgebruikte navigatie flows
-    const commonFlows = [
-      'https://chili-market.com/marktplaats/categorieen/',
-      'https://chili-market.com/marktplaats/recent/',
-      'https://chili-market.com/leden/zoeken/',
-      'https://chili-market.com/help/',
-    ];
-
-    commonFlows.forEach(url => {
-      this.preloadService.preloadCustomUrl(url);
-    });
+    console.log('[BackgroundLoadingManager] Cache warming is disabled');
+    // Niet meer automatisch cache warmen om account/login problemen te voorkomen
   }
 
   /**
    * Reset background loading state (bijv. bij auth state change)
+   * DISABLED: Dit veroorzaakte problemen met accounts en inloggen
    */
   public reset(): void {
     console.log(
-      '[BackgroundLoadingManager] Resetting background loading state',
+      '[BackgroundLoadingManager] Background loading reset is disabled',
     );
     this.isLoading = false;
-    this.preloadService.resetCache();
-
-    // Herstart background loading na reset
-    setTimeout(() => {
-      this.startBackgroundLoading();
-    }, 2000);
+    // Niet meer automatisch cache resetten en herstarten om account/login problemen te voorkomen
   }
 
   /**

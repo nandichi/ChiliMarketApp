@@ -14,17 +14,15 @@ import {
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { Colors } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
-import WordPressAPI from '../services/WordPressAPI';
 
 const { width } = Dimensions.get('window');
 
 export default function LoginScreen() {
-  const { login, continueAsGuest, isLoading, loadingMessage, error } = useAuth();
+  const { login, continueAsGuest, isLoading, loadingMessage, error } =
+    useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [debugInfo, setDebugInfo] = useState<string>('');
-  const [debugging, setDebugging] = useState(false);
 
   const handleLogin = async () => {
     if (!username.trim() || !password.trim()) {
@@ -42,82 +40,17 @@ export default function LoginScreen() {
     }
   };
 
-  const handleDebugAPI = async () => {
-    setDebugging(true);
-    setDebugInfo('Starting API debug...\n');
-
-    try {
-      const api = new WordPressAPI();
-
-      // Clear previous debug info
-      setDebugInfo('');
-
-      // Redirect console.log to our debug info
-      const originalLog = console.log;
-      const originalError = console.error;
-
-      console.log = (...args) => {
-        const message = args
-          .map(arg =>
-            typeof arg === 'object'
-              ? JSON.stringify(arg, null, 2)
-              : String(arg),
-          )
-          .join(' ');
-        setDebugInfo(prev => prev + message + '\n');
-        originalLog(...args);
-      };
-
-      console.error = (...args) => {
-        const message = args
-          .map(arg =>
-            typeof arg === 'object'
-              ? JSON.stringify(arg, null, 2)
-              : String(arg),
-          )
-          .join(' ');
-        setDebugInfo(prev => prev + '❌ ' + message + '\n');
-        originalError(...args);
-      };
-
-      await api.debugAPI();
-
-      // Test connection
-      const connectionTest = await api.testConnection();
-      console.log('Connection test result:', connectionTest);
-
-      // Test JWT Auth specifiek
-      const jwtDebug = await api.debugJWTAuth();
-      console.log('JWT Auth debug result:', jwtDebug);
-
-      // Restore console functions
-      console.log = originalLog;
-      console.error = originalError;
-    } catch (error) {
-      setDebugInfo(prev => prev + `\n❌ Debug error: ${error}\n`);
-    } finally {
-      setDebugging(false);
-    }
-  };
-
-  const clearDebugInfo = () => {
-    setDebugInfo('');
-  };
-
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
     >
       <View style={styles.logoContainer}>
-        <View style={styles.logoImageContainer}>
-          <Image
-            source={require('../../ChiliMarket-Logo.png')}
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
-        </View>
-        <Text style={styles.appName}>Chili Market</Text>
+        <Image
+          source={require('../../Chili-Market-Logo.png')}
+          style={styles.appNameLogo}
+          resizeMode="contain"
+        />
         <Text style={styles.subtitle}>Inloggen op je account</Text>
       </View>
 
@@ -200,45 +133,6 @@ export default function LoginScreen() {
             <Text style={styles.errorText}>{error}</Text>
           </View>
         )}
-
-        {/* Debug Section */}
-        <View style={styles.debugSection}>
-          <Text style={styles.debugTitle}>WordPress API Debug</Text>
-
-          <View style={styles.debugButtons}>
-            <TouchableOpacity
-              style={[
-                styles.debugButton,
-                debugging && styles.debugButtonDisabled,
-              ]}
-              onPress={handleDebugAPI}
-              disabled={debugging}
-            >
-              {debugging ? (
-                <ActivityIndicator color={Colors.white} size="small" />
-              ) : (
-                <>
-                  <Icon name="bug-report" size={16} color={Colors.white} />
-                  <Text style={styles.debugButtonText}>Test API</Text>
-                </>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.clearButton}
-              onPress={clearDebugInfo}
-            >
-              <Icon name="clear" size={16} color={Colors.primary} />
-              <Text style={styles.clearButtonText}>Clear</Text>
-            </TouchableOpacity>
-          </View>
-
-          {debugInfo ? (
-            <ScrollView style={styles.debugOutput} nestedScrollEnabled={true}>
-              <Text style={styles.debugText}>{debugInfo}</Text>
-            </ScrollView>
-          ) : null}
-        </View>
       </View>
 
       <TouchableOpacity style={styles.websiteButton}>
@@ -264,29 +158,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 40,
   },
-  logoImageContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: Colors.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 6,
-    marginBottom: 8,
-  },
-  logoImage: {
-    width: 80,
+
+  appNameLogo: {
+    width: 280,
     height: 80,
-  },
-  appName: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: Colors.primary,
-    marginTop: 16,
+    marginBottom: 8,
+    opacity: 0.95,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+    transform: [{ scale: 1.02 }],
   },
   subtitle: {
     fontSize: 16,
@@ -398,72 +281,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     flex: 1,
   },
-  debugSection: {
-    marginTop: 32,
-    padding: 16,
-    backgroundColor: Colors.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  debugTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.text,
-    marginBottom: 12,
-  },
-  debugButtons: {
-    flexDirection: 'row',
-    marginBottom: 12,
-  },
-  debugButton: {
-    backgroundColor: Colors.primary,
-    borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 8,
-  },
-  debugButtonDisabled: {
-    backgroundColor: Colors.textSecondary,
-  },
-  debugButtonText: {
-    color: Colors.white,
-    fontSize: 12,
-    fontWeight: '500',
-    marginLeft: 4,
-  },
-  clearButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: Colors.primary,
-    borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  clearButtonText: {
-    color: Colors.primary,
-    fontSize: 12,
-    fontWeight: '500',
-    marginLeft: 4,
-  },
-  debugOutput: {
-    backgroundColor: Colors.background,
-    borderRadius: 8,
-    padding: 12,
-    maxHeight: 200,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  debugText: {
-    fontFamily: 'monospace',
-    fontSize: 10,
-    color: Colors.text,
-    lineHeight: 14,
-  },
+
   websiteButton: {
     flexDirection: 'row',
     alignItems: 'center',

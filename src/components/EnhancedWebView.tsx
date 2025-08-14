@@ -77,7 +77,7 @@ const BLOCKED_DOMAINS = [
 
 export default function EnhancedWebView({
   url,
-  preloadEnabled = true,
+  preloadEnabled = false,
   showLoadingProgress = true,
   enableAdvancedCaching = true,
   blockAds = true,
@@ -272,33 +272,95 @@ export default function EnhancedWebView({
             : ''
         }
         
-        // Authentication logic
+        // Authentication logic - versterkt en verbeterd
         ${
           isAuthenticated && user && token
             ? `
         const token = '${token}';
-        if (token && token !== 'undefined' && token !== 'null') {
-          if (!document.cookie.includes('wordpress_logged_in')) {
-            setTimeout(() => {
-              fetch('https://chili-market.com/wp-json/custom-jwt/v1/session', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': 'Bearer ' + token
-                }
-              }).then(res => res.json()).then(data => {
-                console.log('[EnhancedWebView] JWT result:', data.success ? 'SUCCESS' : 'FAILED');
-                if (data.success) {
-                  window.ReactNativeWebView?.postMessage('auth_success');
-                }
-              }).catch(e => {
-                console.log('[EnhancedWebView] JWT error:', e.message);
-              });
-            }, 500);
+        console.log('[EnhancedWebView] Auth Status - Authenticated:', ${isAuthenticated}, 'Token present:', !!token);
+        
+        function performAuthentication() {
+          if (token && token !== 'undefined' && token !== 'null') {
+            // Check eerst of gebruiker al ingelogd is door WordPress cookies te controleren
+            const isAlreadyLoggedIn = document.cookie.includes('wordpress_logged_in') || 
+                                    document.cookie.includes('wordpress_sec') ||
+                                    document.querySelector('.logged-in') !== null ||
+                                    document.querySelector('[href*="wp-admin"]') !== null;
+            
+            if (isAlreadyLoggedIn) {
+              console.log('[EnhancedWebView] User appears to be already logged in, skipping authentication');
+              window.ReactNativeWebView?.postMessage('auth_already_logged_in');
+              return;
+            }
+            
+            console.log('[EnhancedWebView] User not logged in, attempting JWT authentication...');
+            
+            fetch('https://chili-market.com/wp-json/custom-jwt/v1/session', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+              },
+              credentials: 'include'
+            }).then(res => {
+              console.log('[EnhancedWebView] JWT Response status:', res.status);
+              return res.json();
+            }).then(data => {
+              console.log('[EnhancedWebView] JWT result:', data.success ? 'SUCCESS' : 'FAILED', data);
+              if (data.success) {
+                window.ReactNativeWebView?.postMessage('auth_success');
+                console.log('[EnhancedWebView] Authentication successful, reloading page once...');
+                // Markeer dat we een reload hebben gedaan om loops te voorkomen
+                sessionStorage.setItem('chili_app_auth_reloaded', 'true');
+                setTimeout(() => {
+                  window.location.reload();
+                }, 100);
+              } else {
+                console.log('[EnhancedWebView] Authentication failed:', data.message || 'Unknown error');
+                window.ReactNativeWebView?.postMessage('auth_failed');
+              }
+            }).catch(e => {
+              console.log('[EnhancedWebView] JWT error:', e.message);
+              window.ReactNativeWebView?.postMessage('auth_error');
+            });
+          } else {
+            console.log('[EnhancedWebView] No valid token available for authentication');
           }
         }
+        
+        // Voer authenticatie alleen uit als we nog niet hebben geprobeerd voor deze pagina
+        function tryAuthentication() {
+          // Check of we al een reload hebben gedaan voor deze sessie
+          if (sessionStorage.getItem('chili_app_auth_reloaded') === 'true') {
+            console.log('[EnhancedWebView] Already reloaded this session, skipping authentication');
+            return;
+          }
+          
+          // Check of authenticatie al is uitgevoerd voor deze URL
+          const currentUrl = window.location.href;
+          const authKey = 'chili_app_auth_done_' + btoa(currentUrl).substring(0, 20);
+          if (sessionStorage.getItem(authKey) === 'true') {
+            console.log('[EnhancedWebView] Authentication already attempted for this URL, skipping');
+            return;
+          }
+          
+          // Markeer dat we authenticatie proberen voor deze URL
+          sessionStorage.setItem(authKey, 'true');
+          performAuthentication();
+        }
+        
+        // Voer authenticatie uit na een korte vertraging om te zorgen dat de pagina klaar is
+        if (document.readyState === 'complete') {
+          setTimeout(tryAuthentication, 1000);
+        } else {
+          window.addEventListener('load', () => {
+            setTimeout(tryAuthentication, 1000);
+          });
+        }
         `
-            : ''
+            : `
+        console.log('[EnhancedWebView] No authentication - User not authenticated or no token');
+        `
         }
         
         // Custom injected code
@@ -318,6 +380,31 @@ export default function EnhancedWebView({
     enableResourceOptimization,
   ]);
 
+  // Handle WebView messages (vooral voor auth status)
+  const handleMessage = useCallback((event: any) => {
+    const message = event.nativeEvent.data;
+    console.log('[EnhancedWebView] Received message:', message);
+
+    switch (message) {
+      case 'auth_success':
+        console.log('[EnhancedWebView] WebView authentication successful');
+        break;
+      case 'auth_failed':
+        console.log('[EnhancedWebView] WebView authentication failed');
+        break;
+      case 'auth_error':
+        console.log('[EnhancedWebView] WebView authentication error');
+        break;
+      case 'auth_already_logged_in':
+        console.log(
+          '[EnhancedWebView] User already logged in, no authentication needed',
+        );
+        break;
+      default:
+        console.log('[EnhancedWebView] Unknown message:', message);
+    }
+  }, []);
+
   // Enhanced WebView props
   const webViewProps = useMemo(
     () => ({
@@ -327,6 +414,7 @@ export default function EnhancedWebView({
       onLoadProgress: showLoadingProgress ? handleLoadProgress : undefined,
       onLoadEnd: handleLoadEnd,
       onError: handleError,
+      onMessage: handleMessage,
       onShouldStartLoadWithRequest: shouldStartLoadWithRequest,
       injectedJavaScript: enhancedInjectedJS,
 
@@ -374,6 +462,7 @@ export default function EnhancedWebView({
       handleLoadStart,
       handleLoadEnd,
       handleError,
+      handleMessage,
       shouldStartLoadWithRequest,
       enhancedInjectedJS,
       showLoadingProgress,

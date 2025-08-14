@@ -32,26 +32,12 @@ class WebViewPreloadService {
 
   /**
    * Start pre-loading van alle belangrijke URLs bij app start
+   * DISABLED: Dit veroorzaakte problemen met accounts en inloggen
    */
   public async startPreloading(): Promise<void> {
-    console.log(
-      '[WebViewPreloadService] Starting preload of',
-      this.PRELOAD_URLS.length,
-      'URLs',
-    );
-
-    // Wacht kort om app startup niet te vertragen
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    // Pre-load alle URLs parallel
-    const preloadPromises = this.PRELOAD_URLS.map(url => this.preloadUrl(url));
-
-    try {
-      await Promise.allSettled(preloadPromises);
-      console.log('[WebViewPreloadService] All URLs preload initiated');
-    } catch (error) {
-      console.error('[WebViewPreloadService] Error during preloading:', error);
-    }
+    console.log('[WebViewPreloadService] Auto-preloading is disabled');
+    // Niet meer automatisch preloaden om account/login problemen te voorkomen
+    return;
   }
 
   /**
@@ -110,11 +96,7 @@ class WebViewPreloadService {
       return preloadedView;
     }
 
-    // Als niet pre-loaded, start background preload voor volgende keer
-    if (!preloadedView) {
-      this.preloadUrl(url).catch(console.error);
-    }
-
+    // Niet meer automatisch preloaden om account/login problemen te voorkomen
     return null;
   }
 
@@ -181,8 +163,7 @@ class WebViewPreloadService {
   public resetCache(): void {
     console.log('[WebViewPreloadService] Resetting all preloaded views');
     this.preloadedViews.clear();
-    // Herstart preloading na kort interval
-    setTimeout(() => this.startPreloading(), 1000);
+    // Niet meer automatisch herstart preloading om account/login problemen te voorkomen
   }
 
   /**

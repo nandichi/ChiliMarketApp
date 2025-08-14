@@ -19,12 +19,6 @@ export default function WebViewScreen({
   url = CHILI_MARKET_URL,
 }: WebViewScreenProps) {
   const isDarkMode = useColorScheme() === 'dark';
-  const preloadService = WebViewPreloadService.getInstance();
-
-  // Start preloading wanneer screen mount
-  useEffect(() => {
-    preloadService.startPreloading();
-  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -34,7 +28,7 @@ export default function WebViewScreen({
       />
       <EnhancedWebView
         url={url}
-        preloadEnabled={true}
+        preloadEnabled={false}
         showLoadingProgress={true}
         enableAdvancedCaching={true}
         blockAds={true}

@@ -33,18 +33,10 @@ const MarktplaatsWebViewScreen = React.memo(() => (
 
 const ProfielWebViewScreen = React.memo(() => {
   const { user } = useAuth();
-  const backgroundManager = BackgroundLoadingManager.getInstance();
 
   const profileUrl = user?.username
     ? `https://chili-market.com/leden/${user.username}/`
     : 'https://chili-market.com/leden/';
-
-  // Pre-load gebruiker profiel wanneer username beschikbaar is
-  React.useEffect(() => {
-    if (user?.username) {
-      backgroundManager.preloadUserProfile(user.username);
-    }
-  }, [user?.username, backgroundManager]);
 
   return <WebViewScreen url={profileUrl} />;
 });
@@ -69,27 +61,13 @@ export default function TabNavigator() {
   const { isAuthenticated, isGuest } = useAuth();
   const backgroundManager = BackgroundLoadingManager.getInstance();
 
-  // Start background loading zodra navigator mount
+  // Cleanup bij unmount (zonder automatische background loading)
   useEffect(() => {
-    console.log('[TabNavigator] Starting background loading for all tabs');
-    backgroundManager.startBackgroundLoading();
-
-    // Warm cache voor common flows
-    backgroundManager.warmCommonFlows();
-
     return () => {
       // Cleanup wanneer navigator unmount
       backgroundManager.destroy();
     };
   }, [backgroundManager]);
-
-  // Reset cache bij auth state changes
-  useEffect(() => {
-    console.log(
-      '[TabNavigator] Auth state changed, resetting background loading',
-    );
-    backgroundManager.reset();
-  }, [isAuthenticated, isGuest, backgroundManager]);
 
   const getTabBarIconForRoute = React.useCallback(
     ({ route }: { route: any }) => {
