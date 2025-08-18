@@ -11,6 +11,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { Colors } from '../constants/colors';
 import LocalizationService from '../services/LocalizationService';
 import NativeFeaturesService from '../services/NativeFeaturesService';
+import HapticFeedbackService from '../services/HapticFeedbackService';
 import { useAuth } from '../context/AuthContext';
 
 interface BiometricLockScreenProps {
@@ -48,7 +49,7 @@ export default function BiometricLockScreen({
       if (result.success) {
         // SUCCESS - Grant access immediately
         console.log('BiometricLockScreen: SUCCESS - calling onUnlockSuccess');
-        await NativeFeaturesService.triggerNotificationHaptic('success');
+        await HapticFeedbackService.biometricAuth(true);
         onUnlockSuccess();
       } else {
         // FAILURE or CANCEL - Show retry button
@@ -78,7 +79,7 @@ export default function BiometricLockScreen({
           );
         }
 
-        await NativeFeaturesService.triggerNotificationHaptic('error');
+        await HapticFeedbackService.biometricAuth(false);
       }
     } catch (error) {
       console.error('BiometricLockScreen: Authentication error:', error);

@@ -14,6 +14,8 @@ import {
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { Colors } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
+import HapticFeedbackService from '../services/HapticFeedbackService';
+import ContextMenu from '../components/ContextMenu';
 
 const { width } = Dimensions.get('window');
 
@@ -25,15 +27,20 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
+    await HapticFeedbackService.triggerForAction('button_press');
+
     if (!username.trim() || !password.trim()) {
+      await HapticFeedbackService.triggerForAction('error');
       Alert.alert('Fout', 'Vul zowel gebruikersnaam als wachtwoord in.');
       return;
     }
 
     try {
       await login(username.trim(), password.trim());
+      await HapticFeedbackService.triggerForAction('login');
       // Navigation wordt afgehandeld in AuthContext
     } catch (error) {
+      await HapticFeedbackService.triggerForAction('error');
       const errorMessage =
         error instanceof Error ? error.message : 'Login mislukt';
       Alert.alert('Login Fout', errorMessage);
@@ -92,7 +99,10 @@ export default function LoginScreen() {
             autoCorrect={false}
           />
           <TouchableOpacity
-            onPress={() => setShowPassword(!showPassword)}
+            onPress={async () => {
+              await HapticFeedbackService.triggerForAction('toggle');
+              setShowPassword(!showPassword);
+            }}
             style={styles.passwordToggle}
           >
             <Icon
@@ -120,7 +130,10 @@ export default function LoginScreen() {
 
         <TouchableOpacity
           style={styles.guestButton}
-          onPress={() => continueAsGuest()}
+          onPress={async () => {
+            await HapticFeedbackService.triggerForAction('navigation');
+            continueAsGuest();
+          }}
           disabled={isLoading}
         >
           <Icon name="explore" size={20} color={Colors.primary} />
@@ -135,10 +148,42 @@ export default function LoginScreen() {
         )}
       </View>
 
-      <TouchableOpacity style={styles.websiteButton}>
-        <Icon name="web" size={20} color={Colors.primary} />
-        <Text style={styles.websiteButtonText}>Ga naar website</Text>
-      </TouchableOpacity>
+      <ContextMenu
+        options={[
+          {
+            title: 'Open Website',
+            systemIcon: 'safari',
+            onPress: async () => {
+              await HapticFeedbackService.triggerForAction('navigation');
+              // Website openen functionaliteit
+            },
+          },
+          {
+            title: 'Contacteer Support',
+            systemIcon: 'mail',
+            onPress: async () => {
+              await HapticFeedbackService.triggerForAction('button_press');
+              // Support contact functionaliteit
+            },
+          },
+          {
+            title: 'App Info',
+            systemIcon: 'info.circle',
+            onPress: async () => {
+              await HapticFeedbackService.triggerForAction('selection');
+              // App info tonen
+            },
+          },
+        ]}
+        title="Extra Opties"
+        subtitle="Kies een actie"
+        style={styles.websiteButton}
+      >
+        <TouchableOpacity style={styles.websiteButtonInner}>
+          <Icon name="web" size={20} color={Colors.primary} />
+          <Text style={styles.websiteButtonText}>Ga naar website</Text>
+        </TouchableOpacity>
+      </ContextMenu>
     </ScrollView>
   );
 }
@@ -283,10 +328,12 @@ const styles = StyleSheet.create({
   },
 
   websiteButton: {
+    marginTop: 24,
+  },
+  websiteButtonInner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 24,
     paddingVertical: 12,
   },
   websiteButtonText: {

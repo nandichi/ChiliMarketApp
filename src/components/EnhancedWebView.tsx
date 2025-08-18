@@ -18,6 +18,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { Colors } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
 import WebViewPreloadService from '../services/WebViewPreloadService';
+import HapticFeedbackService from '../services/HapticFeedbackService';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -220,7 +221,8 @@ export default function EnhancedWebView({
     [url, onError],
   );
 
-  const handleRetry = useCallback(() => {
+  const handleRetry = useCallback(async () => {
+    await HapticFeedbackService.triggerForAction('refresh');
     setError(false);
     setLoading(true);
     setRetryCount(prev => prev + 1);
@@ -432,8 +434,8 @@ export default function EnhancedWebView({
       javaScriptEnabled: true,
       cacheEnabled: enableAdvancedCaching,
       cacheMode: enableAdvancedCaching
-        ? 'LOAD_CACHE_ELSE_NETWORK'
-        : 'LOAD_DEFAULT',
+        ? ('LOAD_CACHE_ELSE_NETWORK' as const)
+        : ('LOAD_DEFAULT' as const),
 
       // Media optimalisaties
       allowsInlineMediaPlayback: true,

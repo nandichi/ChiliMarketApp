@@ -8,6 +8,8 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { Colors } from '../constants/colors';
+import HapticFeedbackService from '../services/HapticFeedbackService';
+import ContextMenu from '../components/ContextMenu';
 
 export default function CartScreen() {
   const renderCartItem = ({ item }: { item: any }) => (
@@ -20,17 +22,59 @@ export default function CartScreen() {
         <Text style={styles.productPrice}>{item.price}</Text>
       </View>
       <View style={styles.quantityControls}>
-        <TouchableOpacity style={styles.quantityButton}>
+        <TouchableOpacity
+          style={styles.quantityButton}
+          onPress={async () => {
+            await HapticFeedbackService.cartAction('remove');
+          }}
+        >
           <Icon name="remove" size={20} color={Colors.primary} />
         </TouchableOpacity>
         <Text style={styles.quantityText}>{item.quantity}</Text>
-        <TouchableOpacity style={styles.quantityButton}>
+        <TouchableOpacity
+          style={styles.quantityButton}
+          onPress={async () => {
+            await HapticFeedbackService.cartAction('add');
+          }}
+        >
           <Icon name="add" size={20} color={Colors.primary} />
         </TouchableOpacity>
       </View>
-      <TouchableOpacity style={styles.removeButton}>
-        <Icon name="delete" size={20} color={Colors.error} />
-      </TouchableOpacity>
+      <ContextMenu
+        options={[
+          {
+            title: 'Verwijder Item',
+            systemIcon: 'trash',
+            destructive: true,
+            onPress: async () => {
+              await HapticFeedbackService.cartAction('remove');
+              // Item verwijderen logica
+            },
+          },
+          {
+            title: 'Bewaar voor Later',
+            systemIcon: 'heart',
+            onPress: async () => {
+              await HapticFeedbackService.triggerForAction('selection');
+              // Bewaar voor later logica
+            },
+          },
+          {
+            title: 'Product Details',
+            systemIcon: 'info.circle',
+            onPress: async () => {
+              await HapticFeedbackService.triggerForAction('navigation');
+              // Toon product details
+            },
+          },
+        ]}
+        title="Item Opties"
+        subtitle="Kies een actie voor dit item"
+      >
+        <TouchableOpacity style={styles.removeButton}>
+          <Icon name="delete" size={20} color={Colors.error} />
+        </TouchableOpacity>
+      </ContextMenu>
     </View>
   );
 
@@ -60,7 +104,13 @@ export default function CartScreen() {
               <Text style={styles.totalValue}>€27,42</Text>
             </View>
 
-            <TouchableOpacity style={styles.checkoutButton}>
+            <TouchableOpacity
+              style={styles.checkoutButton}
+              onPress={async () => {
+                await HapticFeedbackService.cartAction('checkout');
+                // Checkout logica
+              }}
+            >
               <Text style={styles.checkoutButtonText}>Bestelling Plaatsen</Text>
               <Icon name="arrow-forward" size={20} color={Colors.white} />
             </TouchableOpacity>
@@ -73,7 +123,13 @@ export default function CartScreen() {
           <Text style={styles.emptyCartSubtitle}>
             Voeg producten toe om te beginnen met winkelen
           </Text>
-          <TouchableOpacity style={styles.shopNowButton}>
+          <TouchableOpacity
+            style={styles.shopNowButton}
+            onPress={async () => {
+              await HapticFeedbackService.triggerForAction('navigation');
+              // Navigatie naar shop
+            }}
+          >
             <Text style={styles.shopNowButtonText}>Nu Winkelen</Text>
           </TouchableOpacity>
         </View>

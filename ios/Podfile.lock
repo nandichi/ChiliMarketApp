@@ -1648,6 +1648,8 @@ PODS:
     - React-RCTFBReactNativeSpec
     - ReactCommon/turbomodule/core
     - SocketRocket
+  - react-native-context-menu-view (1.19.0):
+    - React
   - react-native-safe-area-context (5.6.0):
     - boost
     - DoubleConversion
@@ -2301,6 +2303,35 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
+  - RNReactNativeHapticFeedback (2.3.3):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - SocketRocket
+    - Yoga
   - RNReanimated (3.19.1):
     - boost
     - DoubleConversion
@@ -2585,6 +2616,7 @@ DEPENDENCIES:
   - React-logger (from `../node_modules/react-native/ReactCommon/logger`)
   - React-Mapbuffer (from `../node_modules/react-native/ReactCommon`)
   - React-microtasksnativemodule (from `../node_modules/react-native/ReactCommon/react/nativemodule/microtasks`)
+  - react-native-context-menu-view (from `../node_modules/react-native-context-menu-view`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
   - react-native-splash-screen (from `../node_modules/react-native-splash-screen`)
   - react-native-webview (from `../node_modules/react-native-webview`)
@@ -2621,6 +2653,7 @@ DEPENDENCIES:
   - ReactCommon/turbomodule/core (from `../node_modules/react-native/ReactCommon`)
   - "RNCAsyncStorage (from `../node_modules/@react-native-async-storage/async-storage`)"
   - RNGestureHandler (from `../node_modules/react-native-gesture-handler`)
+  - RNReactNativeHapticFeedback (from `../node_modules/react-native-haptic-feedback`)
   - RNReanimated (from `../node_modules/react-native-reanimated`)
   - RNScreens (from `../node_modules/react-native-screens`)
   - RNVectorIcons (from `../node_modules/react-native-vector-icons`)
@@ -2713,6 +2746,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon"
   React-microtasksnativemodule:
     :path: "../node_modules/react-native/ReactCommon/react/nativemodule/microtasks"
+  react-native-context-menu-view:
+    :path: "../node_modules/react-native-context-menu-view"
   react-native-safe-area-context:
     :path: "../node_modules/react-native-safe-area-context"
   react-native-splash-screen:
@@ -2785,6 +2820,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@react-native-async-storage/async-storage"
   RNGestureHandler:
     :path: "../node_modules/react-native-gesture-handler"
+  RNReactNativeHapticFeedback:
+    :path: "../node_modules/react-native-haptic-feedback"
   RNReanimated:
     :path: "../node_modules/react-native-reanimated"
   RNScreens:
@@ -2835,6 +2872,7 @@ SPEC CHECKSUMS:
   React-logger: 984ebd897afad067555d081deaf03f57c4315723
   React-Mapbuffer: 0c045c844ce6d85cde53e85ab163294c6adad349
   React-microtasksnativemodule: d9499269ad1f484ae71319bac1d9231447f2094e
+  react-native-context-menu-view: 3a8fb510448efa9d477f645dafa889ef1c78daaa
   react-native-safe-area-context: b84e3cefd1ec3d38aa1d8bfbc2a15400ffe05181
   react-native-splash-screen: 95994222cc95c236bd3cdc59fe45ed5f27969594
   react-native-webview: 9a8ea59197aa76145b8ce72aa3eea69f1e89dd38
@@ -2871,6 +2909,7 @@ SPEC CHECKSUMS:
   ReactCommon: 17fd88849a174bf9ce45461912291aca711410fc
   RNCAsyncStorage: 1f04c8d56558e533277beda29187f571cf7eecb2
   RNGestureHandler: db29d3e7edf41a11d133cc3ffd4029762376ed1a
+  RNReactNativeHapticFeedback: 8eb91a6f48567d02ec8026e515102e18c41030cf
   RNReanimated: 4c869be3fca0533e45c5ba1d5cc5079c322e95d4
   RNScreens: 9924375d5b9bf84336fd113cee427ec082f3b384
   RNVectorIcons: be4d047a76ad307ffe54732208fb0498fcb8477f
