@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  RefreshControl,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { Colors } from '../constants/colors';
@@ -13,19 +14,24 @@ import { useAuth } from '../context/AuthContext';
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
+  const [refreshing, setRefreshing] = useState(false);
 
   const handleLogout = () => {
     Alert.alert('Uitloggen', 'Weet je zeker dat je wilt uitloggen?', [
       { text: 'Annuleren', style: 'cancel' },
-      { text: 'Uitloggen', style: 'destructive', onPress: async () => {
-        try {
-          await logout();
-          console.log('ProfileScreen: Logout completed successfully');
-        } catch (error) {
-          console.error('ProfileScreen: Logout error:', error);
-          Alert.alert('Fout', 'Uitloggen is mislukt. Probeer opnieuw.');
-        }
-      }},
+      {
+        text: 'Uitloggen',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await logout();
+            console.log('ProfileScreen: Logout completed successfully');
+          } catch (error) {
+            console.error('ProfileScreen: Logout error:', error);
+            Alert.alert('Fout', 'Uitloggen is mislukt. Probeer opnieuw.');
+          }
+        },
+      },
     ]);
   };
 
@@ -37,8 +43,27 @@ export default function ProfileScreen() {
     );
   };
 
+  const onRefresh = () => {
+    setRefreshing(true);
+    // Simuleer profiel data refresh
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1000);
+  };
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={[Colors.primary]}
+          tintColor={Colors.primary}
+        />
+      }
+    >
       {/* Profile Header */}
       <View style={styles.profileHeader}>
         <View style={styles.avatarContainer}>

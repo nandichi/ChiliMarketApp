@@ -10,6 +10,7 @@ import {
   Alert,
   ActivityIndicator,
   Image,
+  RefreshControl,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { Colors } from '../constants/colors';
@@ -23,6 +24,7 @@ export default function HomeScreen() {
   const [posts, setPosts] = useState<WordPressPost[]>([]);
   const [categories, setCategories] = useState<WordPressCategory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -30,9 +32,13 @@ export default function HomeScreen() {
     loadData();
   }, []);
 
-  const loadData = async () => {
+  const loadData = async (isRefresh = false) => {
     try {
-      setLoading(true);
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
 
       // Laad posts en categorieën parallel
@@ -47,8 +53,16 @@ export default function HomeScreen() {
       console.error('Error loading data:', error);
       setError('Kon gegevens niet laden. Probeer opnieuw.');
     } finally {
-      setLoading(false);
+      if (isRefresh) {
+        setRefreshing(false);
+      } else {
+        setLoading(false);
+      }
     }
+  };
+
+  const onRefresh = () => {
+    loadData(true);
   };
 
   const handleSearch = async () => {
@@ -113,7 +127,18 @@ export default function HomeScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={[Colors.primary]}
+          tintColor={Colors.primary}
+        />
+      }
+    >
       {/* Search Bar */}
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>

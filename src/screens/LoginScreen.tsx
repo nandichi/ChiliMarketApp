@@ -12,8 +12,9 @@ import {
   Image,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { Colors } from '../constants/colors';
+import { getColors, Colors } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import HapticFeedbackService from '../services/HapticFeedbackService';
 import ContextMenu from '../components/ContextMenu';
 
@@ -22,9 +23,12 @@ const { width } = Dimensions.get('window');
 export default function LoginScreen() {
   const { login, continueAsGuest, isLoading, loadingMessage, error } =
     useAuth();
+  const { isDark } = useTheme();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  const colors = getColors(isDark);
 
   const handleLogin = async () => {
     await HapticFeedbackService.triggerForAction('button_press');
@@ -49,7 +53,7 @@ export default function LoginScreen() {
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.contentContainer}
     >
       <View style={styles.logoContainer}>
@@ -58,21 +62,28 @@ export default function LoginScreen() {
           style={styles.appNameLogo}
           resizeMode="contain"
         />
-        <Text style={styles.subtitle}>Inloggen op je account</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+          Inloggen op je account
+        </Text>
       </View>
 
       <View style={styles.formContainer}>
-        <View style={styles.inputContainer}>
+        <View
+          style={[
+            styles.inputContainer,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
           <Icon
             name="person"
             size={20}
-            color={Colors.textSecondary}
+            color={colors.primary}
             style={styles.inputIcon}
           />
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: colors.text }]}
             placeholder="Gebruikersnaam of email"
-            placeholderTextColor={Colors.textSecondary}
+            placeholderTextColor={colors.textSecondary}
             value={username}
             onChangeText={setUsername}
             autoCapitalize="none"
@@ -81,17 +92,22 @@ export default function LoginScreen() {
           />
         </View>
 
-        <View style={styles.inputContainer}>
+        <View
+          style={[
+            styles.inputContainer,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
           <Icon
             name="lock"
             size={20}
-            color={Colors.textSecondary}
+            color={colors.primary}
             style={styles.inputIcon}
           />
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: colors.text }]}
             placeholder="Wachtwoord"
-            placeholderTextColor={Colors.textSecondary}
+            placeholderTextColor={colors.textSecondary}
             value={password}
             onChangeText={setPassword}
             secureTextEntry={!showPassword}
@@ -108,23 +124,31 @@ export default function LoginScreen() {
             <Icon
               name={showPassword ? 'visibility-off' : 'visibility'}
               size={20}
-              color={Colors.textSecondary}
+              color={colors.textSecondary}
             />
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity
-          style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
+          style={[
+            styles.loginButton,
+            { backgroundColor: colors.primary },
+            isLoading && { backgroundColor: colors.textSecondary },
+          ]}
           onPress={handleLogin}
           disabled={isLoading}
         >
           {isLoading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator color={Colors.white} size="small" />
-              <Text style={styles.loadingText}>{loadingMessage}</Text>
+              <ActivityIndicator color={colors.white} size="small" />
+              <Text style={[styles.loadingText, { color: colors.white }]}>
+                {loadingMessage}
+              </Text>
             </View>
           ) : (
-            <Text style={styles.loginButtonText}>Inloggen</Text>
+            <Text style={[styles.loginButtonText, { color: colors.white }]}>
+              Inloggen
+            </Text>
           )}
         </TouchableOpacity>
 
@@ -136,14 +160,23 @@ export default function LoginScreen() {
           }}
           disabled={isLoading}
         >
-          <Icon name="explore" size={20} color={Colors.primary} />
-          <Text style={styles.guestButtonText}>Doorgaan zonder inloggen</Text>
+          <Icon name="explore" size={20} color={colors.primary} />
+          <Text style={[styles.guestButtonText, { color: colors.primary }]}>
+            Doorgaan zonder inloggen
+          </Text>
         </TouchableOpacity>
 
         {error && (
-          <View style={styles.errorContainer}>
-            <Icon name="error-outline" size={20} color={Colors.error} />
-            <Text style={styles.errorText}>{error}</Text>
+          <View
+            style={[
+              styles.errorContainer,
+              { backgroundColor: colors.backgroundRed },
+            ]}
+          >
+            <Icon name="error-outline" size={20} color={colors.error} />
+            <Text style={[styles.errorText, { color: colors.error }]}>
+              {error}
+            </Text>
           </View>
         )}
       </View>
@@ -180,8 +213,10 @@ export default function LoginScreen() {
         style={styles.websiteButton}
       >
         <TouchableOpacity style={styles.websiteButtonInner}>
-          <Icon name="web" size={20} color={Colors.primary} />
-          <Text style={styles.websiteButtonText}>Ga naar website</Text>
+          <Icon name="web" size={20} color={colors.primary} />
+          <Text style={[styles.websiteButtonText, { color: colors.primary }]}>
+            Ga naar website
+          </Text>
         </TouchableOpacity>
       </ContextMenu>
     </ScrollView>
@@ -191,7 +226,6 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   contentContainer: {
     flexGrow: 1,

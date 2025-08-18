@@ -1,4 +1,4 @@
-export const Colors = {
+const lightColors = {
   // Primary colors - gespecificeerde systeemkleuren
   primary: '#BC1B20',
   primaryDark: '#9A1418',
@@ -58,9 +58,90 @@ export const Colors = {
   shadowDark: 'rgba(0, 0, 0, 0.2)',
 };
 
-export const gradients = {
+const darkColors = {
+  // Primary colors - aangepast voor dark mode
+  primary: '#DC2626',
+  primaryDark: '#B91C1C',
+  primaryLight: '#7F1D1D',
+
+  // Secondary colors
+  secondary: '#9CA3AF',
+  secondaryDark: '#6B7280',
+  secondaryLight: '#D1D5DB',
+
+  // Neutral colors
+  white: '#000000',
+  black: '#FFFFFF',
+  gray100: '#1F2937',
+  gray200: '#374151',
+  gray300: '#4B5563',
+  gray400: '#6B7280',
+  gray500: '#9CA3AF',
+  gray600: '#D1D5DB',
+  gray700: '#E5E7EB',
+  gray800: '#F3F4F6',
+  gray900: '#F9FAFB',
+
+  // Accent colors
+  accent: '#FBBF24',
+  accentDark: '#F59E0B',
+  accentLight: '#FCD34D',
+
+  // Status colors
+  success: '#10B981',
+  warning: '#F59E0B',
+  error: '#DC2626',
+  info: '#3B82F6',
+
+  // Background colors
+  background: '#111827',
+  backgroundYellow: '#1F2937',
+  backgroundRed: '#1F1213',
+  surface: '#1F2937',
+  card: '#374151',
+
+  // Text colors
+  text: '#F9FAFB',
+  textSecondary: '#D1D5DB',
+  textLight: '#9CA3AF',
+  textOnPrimary: '#FFFFFF',
+
+  // Border colors
+  border: '#4B5563',
+  borderLight: '#374151',
+
+  // Button colors
+  buttonLight: '#064E3B',
+
+  // Shadow colors
+  shadow: 'rgba(0, 0, 0, 0.3)',
+  shadowDark: 'rgba(0, 0, 0, 0.5)',
+};
+
+export const getColors = (isDark: boolean) => {
+  return isDark ? darkColors : lightColors;
+};
+
+// Backward compatibility - gebruik light colors als default
+export const Colors = lightColors;
+
+const lightGradients = {
   primary: ['#BC1B20', '#F8E8E9'],
   secondary: ['#657177', '#FAC500'],
   warm: ['#FAC500', '#FFD700'],
   cool: ['#3182CE', '#63B3ED'],
 };
+
+const darkGradients = {
+  primary: ['#DC2626', '#7F1D1D'],
+  secondary: ['#9CA3AF', '#FBBF24'],
+  warm: ['#FBBF24', '#FCD34D'],
+  cool: ['#3B82F6', '#93C5FD'],
+};
+
+export const getGradients = (isDark: boolean) => {
+  return isDark ? darkGradients : lightGradients;
+};
+
+// Backward compatibility
+export const gradients = lightGradients;

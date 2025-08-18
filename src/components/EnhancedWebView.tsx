@@ -12,6 +12,8 @@ import {
   Text,
   TouchableOpacity,
   Dimensions,
+  Share,
+  Alert,
 } from 'react-native';
 import { WebView, WebViewProps } from 'react-native-webview';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -29,6 +31,7 @@ interface EnhancedWebViewProps extends Omit<WebViewProps, 'source'> {
   enableAdvancedCaching?: boolean;
   blockAds?: boolean;
   enableResourceOptimization?: boolean;
+  showShareButton?: boolean;
 }
 
 // Uitgebreide lijst van te blokkeren resources voor betere performance
@@ -83,6 +86,7 @@ export default function EnhancedWebView({
   enableAdvancedCaching = true,
   blockAds = true,
   enableResourceOptimization = true,
+  showShareButton = true,
   onLoadStart,
   onLoadEnd,
   onError,
@@ -95,6 +99,8 @@ export default function EnhancedWebView({
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [error, setError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [currentUrl, setCurrentUrl] = useState(url);
+  const [pageTitle, setPageTitle] = useState('');
   const webViewRef = useRef<WebView>(null);
   const preloadService = WebViewPreloadService.getInstance();
   const token = api.getAuthToken();
@@ -197,11 +203,23 @@ export default function EnhancedWebView({
       setLoading(false);
       setLoadingProgress(1);
 
+      // Update currentUrl als we nog geen betere hebben
+      if (!currentUrl || currentUrl === url) {
+        const eventUrl = syntheticEvent?.nativeEvent?.url;
+        if (eventUrl) {
+          setCurrentUrl(eventUrl);
+          console.log(
+            '[EnhancedWebView] Updated currentUrl from load event:',
+            eventUrl,
+          );
+        }
+      }
+
       if (onLoadEnd) {
         onLoadEnd(syntheticEvent);
       }
     },
-    [url, onLoadEnd],
+    [url, onLoadEnd, currentUrl],
   );
 
   const handleError = useCallback(
@@ -227,6 +245,85 @@ export default function EnhancedWebView({
     setLoading(true);
     setRetryCount(prev => prev + 1);
   }, []);
+
+  // Handle navigation state changes (meer betrouwbaar voor URL tracking)
+  const handleNavigationStateChange = useCallback(
+    (navState: any) => {
+      const { url: newUrl, title } = navState;
+      if (newUrl && newUrl !== currentUrl) {
+        setCurrentUrl(newUrl);
+        console.log('[EnhancedWebView] Navigation state changed:', {
+          newUrl,
+          title,
+          canGoBack: navState.canGoBack,
+          canGoForward: navState.canGoForward,
+        });
+      }
+      if (title && title !== pageTitle) {
+        setPageTitle(title);
+      }
+    },
+    [currentUrl, pageTitle],
+  );
+
+  // Share handler
+  const handleShare = useCallback(async () => {
+    try {
+      await HapticFeedbackService.triggerForAction('button_press');
+
+      // Probeer de huidige URL direct van de WebView op te halen
+      let shareUrl = currentUrl || url;
+      let shareTitle = pageTitle || 'Chili Market';
+
+      // Als we geen goede currentUrl hebben, probeer direct van webview
+      if (!currentUrl || currentUrl === url) {
+        try {
+          // Inject JavaScript om direct de huidige URL en titel op te halen
+          const urlScript = `
+            (function() {
+              const info = {
+                url: window.location.href,
+                title: document.title || 'Chili Market'
+              };
+              window.ReactNativeWebView?.postMessage('share_info:' + JSON.stringify(info));
+              return JSON.stringify(info);
+            })();
+          `;
+
+          if (webViewRef.current) {
+            webViewRef.current.injectJavaScript(urlScript);
+            // Korte vertraging om te wachten op de response
+            await new Promise(resolve => setTimeout(resolve, 200));
+          }
+        } catch (e) {
+          console.log('[EnhancedWebView] Direct URL fetch failed:', e);
+        }
+      }
+
+      console.log('[EnhancedWebView] Sharing:', {
+        title: shareTitle,
+        url: shareUrl,
+        currentUrl,
+        originalUrl: url,
+      });
+
+      const result = await Share.share({
+        message: `${shareTitle}\n${shareUrl}`,
+        url: shareUrl,
+        title: shareTitle,
+      });
+
+      if (result.action === Share.sharedAction) {
+        console.log('[EnhancedWebView] Content shared successfully');
+      }
+    } catch (error) {
+      console.error('[EnhancedWebView] Share error:', error);
+      Alert.alert(
+        'Delen mislukt',
+        'Er is een probleem opgetreden bij het delen van deze pagina.',
+      );
+    }
+  }, [pageTitle, currentUrl, url]);
 
   // Enhanced injected JavaScript met performance optimalisaties
   const enhancedInjectedJS = useMemo(() => {
@@ -365,6 +462,72 @@ export default function EnhancedWebView({
         `
         }
         
+        // URL en titel tracking voor share functionaliteit
+        function sendPageInfo() {
+          const currentUrl = window.location.href;
+          const pageTitle = document.title || '';
+          
+          const pageInfo = {
+            type: 'page_info',
+            url: currentUrl,
+            title: pageTitle
+          };
+          
+          console.log('[WebView] Sending page info:', pageInfo);
+          window.ReactNativeWebView?.postMessage(JSON.stringify(pageInfo));
+        }
+        
+        // Verstuur pagina info meerdere keren om zeker te zijn
+        function ensurePageInfoSent() {
+          sendPageInfo();
+          setTimeout(sendPageInfo, 1000);
+          setTimeout(sendPageInfo, 2000);
+        }
+        
+        // Verstuur pagina info wanneer de pagina klaar is
+        if (document.readyState === 'complete') {
+          setTimeout(ensurePageInfoSent, 500);
+        } else {
+          window.addEventListener('load', () => {
+            setTimeout(ensurePageInfoSent, 500);
+          });
+        }
+        
+        // Track URL changes voor single-page applications
+        let lastUrl = window.location.href;
+        const observer = new MutationObserver(() => {
+          const currentUrl = window.location.href;
+          if (currentUrl !== lastUrl) {
+            lastUrl = currentUrl;
+            console.log('[WebView] URL changed to:', currentUrl);
+            setTimeout(sendPageInfo, 300);
+          }
+        });
+        
+        observer.observe(document, { 
+          childList: true, 
+          subtree: true 
+        });
+        
+        // Ook luisteren naar popstate voor browser navigatie
+        window.addEventListener('popstate', () => {
+          setTimeout(sendPageInfo, 100);
+        });
+        
+        // En pushstate/replacestate overriden voor SPA navigatie
+        const originalPushState = history.pushState;
+        const originalReplaceState = history.replaceState;
+        
+        history.pushState = function() {
+          originalPushState.apply(history, arguments);
+          setTimeout(sendPageInfo, 100);
+        };
+        
+        history.replaceState = function() {
+          originalReplaceState.apply(history, arguments);
+          setTimeout(sendPageInfo, 100);
+        };
+        
         // Custom injected code
         ${injectedJavaScript || ''}
         
@@ -382,10 +545,40 @@ export default function EnhancedWebView({
     enableResourceOptimization,
   ]);
 
-  // Handle WebView messages (vooral voor auth status)
+  // Handle WebView messages (vooral voor auth status en page info)
   const handleMessage = useCallback((event: any) => {
     const message = event.nativeEvent.data;
     console.log('[EnhancedWebView] Received message:', message);
+
+    // Check voor share_info berichten
+    if (message.startsWith('share_info:')) {
+      try {
+        const infoData = message.replace('share_info:', '');
+        const parsedInfo = JSON.parse(infoData);
+        setCurrentUrl(parsedInfo.url);
+        setPageTitle(parsedInfo.title);
+        console.log('[EnhancedWebView] Share info updated:', parsedInfo);
+        return;
+      } catch (e) {
+        console.log('[EnhancedWebView] Failed to parse share info:', e);
+      }
+    }
+
+    // Probeer JSON te parsen voor gestructureerde berichten
+    try {
+      const parsedMessage = JSON.parse(message);
+      if (parsedMessage.type === 'page_info') {
+        setCurrentUrl(parsedMessage.url);
+        setPageTitle(parsedMessage.title);
+        console.log('[EnhancedWebView] Page info updated:', {
+          url: parsedMessage.url,
+          title: parsedMessage.title,
+        });
+        return;
+      }
+    } catch (e) {
+      // Niet een JSON bericht, behandel als string
+    }
 
     switch (message) {
       case 'auth_success':
@@ -418,6 +611,7 @@ export default function EnhancedWebView({
       onError: handleError,
       onMessage: handleMessage,
       onShouldStartLoadWithRequest: shouldStartLoadWithRequest,
+      onNavigationStateChange: handleNavigationStateChange,
       injectedJavaScript: enhancedInjectedJS,
 
       // Performance optimalisaties
@@ -466,6 +660,7 @@ export default function EnhancedWebView({
       handleError,
       handleMessage,
       shouldStartLoadWithRequest,
+      handleNavigationStateChange,
       enhancedInjectedJS,
       showLoadingProgress,
       handleLoadProgress,
@@ -524,6 +719,17 @@ export default function EnhancedWebView({
       <View style={styles.webViewContainer}>
         <WebView ref={webViewRef} key={webViewKey} {...webViewProps} />
       </View>
+
+      {/* Share Button */}
+      {showShareButton && !loading && !error && (
+        <TouchableOpacity
+          style={styles.shareButton}
+          onPress={handleShare}
+          activeOpacity={0.8}
+        >
+          <Icon name="share" size={24} color={Colors.white} />
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -621,5 +827,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
+  },
+  shareButton: {
+    position: 'absolute',
+    bottom: 70,
+    right: 20,
+    width: 56,
+    height: 56,
+    backgroundColor: Colors.primary,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+    zIndex: 1000,
   },
 });

@@ -5,8 +5,9 @@ import SplashScreen from '../components/SplashScreen';
 import BiometricLockScreen from '../components/BiometricLockScreen';
 import TabNavigator from './TabNavigator';
 import LoginScreen from '../screens/LoginScreen';
-import { Colors } from '../constants/colors';
+import { getColors } from '../constants/colors';
 import { AuthProvider, useAuth } from '../context/AuthContext';
+import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import WebViewPreloadService from '../services/WebViewPreloadService';
 import BackgroundLoadingManager from '../services/BackgroundLoadingManager';
 import CacheOptimizationService from '../services/CacheOptimizationService';
@@ -23,8 +24,11 @@ function AuthenticatedApp() {
     biometricSupported,
     user,
   } = useAuth();
+  const { isDark } = useTheme();
   const [showSplash, setShowSplash] = useState(true);
   const [showBiometricLock, setShowBiometricLock] = useState(false);
+
+  const colors = getColors(isDark);
 
   // Initialiseer performance services bij app start
   useEffect(() => {
@@ -107,9 +111,9 @@ function AuthenticatedApp() {
   const screenOptions = React.useMemo(
     () => ({
       headerShown: false,
-      cardStyle: { backgroundColor: Colors.background },
+      cardStyle: { backgroundColor: colors.background },
     }),
-    [],
+    [colors.background],
   );
 
   // Show splash screen first
@@ -143,8 +147,10 @@ function AuthenticatedApp() {
 
 export default function AppNavigator() {
   return (
-    <AuthProvider>
-      <AuthenticatedApp />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <AuthenticatedApp />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

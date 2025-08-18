@@ -11,9 +11,11 @@ import {
   Platform,
   Switch,
 } from 'react-native';
+import Clipboard from '@react-native-clipboard/clipboard';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { Colors } from '../constants/colors';
+import { getColors } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import NativeFeaturesService from '../services/NativeFeaturesService';
 import LocalizationService from '../services/LocalizationService';
 
@@ -25,6 +27,7 @@ export default function LogoutScreen() {
     setBiometricEnabled: setBiometricEnabledAuth,
     biometricEnabled: authBiometricEnabled,
   } = useAuth();
+  const { isDark, mode, setThemeMode, toggleTheme } = useTheme();
   const [currentUser, setCurrentUser] = useState(user);
   const [currentLoading, setCurrentLoading] = useState(isLoading);
   const [systemInfo, setSystemInfo] = useState<any>(null);
@@ -32,6 +35,8 @@ export default function LogoutScreen() {
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [loadingBiometric, setLoadingBiometric] = useState(false);
   const [featureLoading, setFeatureLoading] = useState<string | null>(null);
+
+  const colors = getColors(isDark);
 
   // Stabiliseer de state om oneindige loops te voorkomen
   useEffect(() => {
@@ -249,6 +254,34 @@ export default function LogoutScreen() {
       );
     });
 
+  const handleCopyAffiliateLink = async () => {
+    if (!currentUser) return;
+
+    try {
+      // Gebruik username of name als fallback
+      const referralCode = currentUser.username || currentUser.name || 'user';
+      const affiliateLink = `https://chili-market.com?r=${referralCode}`;
+
+      // Kopieer naar clipboard
+      await Clipboard.setString(affiliateLink);
+
+      // Trigger success haptic
+      await NativeFeaturesService.triggerNotificationHaptic('success');
+
+      Alert.alert(
+        'Affiliate Link Gekopieerd!',
+        `Je persoonlijke link is gekopieerd naar het klembord:\n\n${affiliateLink}\n\nDeel deze link met vrienden en verdien commissie op hun aankopen!`,
+      );
+    } catch (error) {
+      console.error('Failed to copy affiliate link:', error);
+      await NativeFeaturesService.triggerNotificationHaptic('error');
+      Alert.alert(
+        'Fout',
+        'Er is een fout opgetreden bij het kopiëren van je affiliate link. Probeer opnieuw.',
+      );
+    }
+  };
+
   const handleBiometricToggle = async (enabled: boolean) => {
     if (loadingBiometric) return;
 
@@ -288,6 +321,17 @@ export default function LogoutScreen() {
     }
   };
 
+  const handleDarkModeToggle = async () => {
+    try {
+      await NativeFeaturesService.triggerImpactHaptic('light');
+      await toggleTheme();
+      await NativeFeaturesService.triggerNotificationHaptic('success');
+    } catch (error) {
+      console.error('Dark mode toggle error:', error);
+      await NativeFeaturesService.triggerNotificationHaptic('error');
+    }
+  };
+
   const renderFeatureButton = (
     title: string,
     iconName: string,
@@ -298,7 +342,7 @@ export default function LogoutScreen() {
     onSwitchChange?: (value: boolean) => void,
   ) => (
     <TouchableOpacity
-      style={styles.featureButton}
+      style={[styles.featureButton, { borderBottomColor: colors.border }]}
       onPress={onPress}
       disabled={featureLoading !== null}
       accessibilityLabel={title}
@@ -306,34 +350,43 @@ export default function LogoutScreen() {
     >
       <View style={styles.featureButtonContent}>
         <View style={styles.featureButtonLeft}>
-          <Icon name={iconName} size={24} color={Colors.primary} />
+          <Icon name={iconName} size={24} color={colors.primary} />
           <View style={styles.featureButtonText}>
-            <Text style={styles.featureButtonTitle}>{title}</Text>
+            <Text style={[styles.featureButtonTitle, { color: colors.text }]}>
+              {title}
+            </Text>
             {subtitle && (
-              <Text style={styles.featureButtonSubtitle}>{subtitle}</Text>
+              <Text
+                style={[
+                  styles.featureButtonSubtitle,
+                  { color: colors.textSecondary },
+                ]}
+              >
+                {subtitle}
+              </Text>
             )}
           </View>
         </View>
         <View style={styles.featureButtonRight}>
           {(featureLoading === title || loadingBiometric) && (
-            <ActivityIndicator size="small" color={Colors.primary} />
+            <ActivityIndicator size="small" color={colors.primary} />
           )}
           {showSwitch && !featureLoading && !loadingBiometric && (
             <Switch
               value={switchValue || false}
               onValueChange={onSwitchChange}
-              trackColor={{ false: Colors.gray300, true: Colors.primary }}
+              trackColor={{ false: colors.gray300, true: colors.primary }}
               thumbColor={
                 Platform.OS === 'ios'
                   ? undefined
                   : switchValue
-                  ? Colors.white
-                  : Colors.gray500
+                  ? colors.white
+                  : colors.gray500
               }
             />
           )}
           {!showSwitch && !featureLoading && (
-            <Icon name="chevron-right" size={24} color={Colors.gray400} />
+            <Icon name="chevron-right" size={24} color={colors.gray400} />
           )}
         </View>
       </View>
@@ -342,57 +395,146 @@ export default function LogoutScreen() {
 
   const renderSection = (title: string, children: React.ReactNode) => (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <View style={styles.sectionContent}>{children}</View>
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>{title}</Text>
+      <View style={[styles.sectionContent, { backgroundColor: colors.card }]}>
+        {children}
+      </View>
     </View>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
       >
         {/* Header Section */}
         <View style={styles.header}>
-          <View style={styles.iconContainer}>
-            <Icon name="settings" size={50} color={Colors.primary} />
+          <View
+            style={[styles.iconContainer, { backgroundColor: colors.card }]}
+          >
+            <Icon name="settings" size={50} color={colors.primary} />
           </View>
-          <Text style={styles.title}>
+          <Text style={[styles.title, { color: colors.text }]}>
             {LocalizationService.t('logout.title')}
           </Text>
           {currentUser && (
-            <View style={styles.userInfo}>
-              <Text style={styles.userInfoLabel}>
+            <View style={[styles.userInfo, { backgroundColor: colors.card }]}>
+              <Text
+                style={[styles.userInfoLabel, { color: colors.textSecondary }]}
+              >
                 {LocalizationService.t('logout.loggedInAs')}
               </Text>
-              <Text style={styles.userName}>
+              <Text style={[styles.userName, { color: colors.text }]}>
                 {currentUser.name || currentUser.username}
               </Text>
             </View>
           )}
         </View>
 
+        {/* Affiliate Link Section - Prominent Feature */}
+        {currentUser && (
+          <View style={styles.affiliateSection}>
+            <View
+              style={[
+                styles.affiliateCard,
+                { backgroundColor: colors.primary },
+              ]}
+            >
+              <View style={styles.affiliateHeader}>
+                <Icon name="share" size={32} color={colors.white} />
+                <View style={styles.affiliateHeaderText}>
+                  <Text
+                    style={[styles.affiliateTitle, { color: colors.white }]}
+                  >
+                    Verdien Met Affiliate Links!
+                  </Text>
+                  <Text
+                    style={[styles.affiliateSubtitle, { color: colors.white }]}
+                  >
+                    Deel je persoonlijke link en verdien commissie
+                  </Text>
+                </View>
+              </View>
+
+              <View
+                style={[
+                  styles.affiliateLink,
+                  { backgroundColor: colors.white },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.affiliateLinkText,
+                    { color: colors.textSecondary },
+                  ]}
+                >
+                  https://chili-market.com?r=
+                  {currentUser.username || currentUser.name || 'user'}
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                style={[
+                  styles.affiliateButton,
+                  { backgroundColor: colors.white },
+                ]}
+                onPress={handleCopyAffiliateLink}
+                activeOpacity={0.8}
+              >
+                <Icon name="content-copy" size={20} color={colors.primary} />
+                <Text
+                  style={[
+                    styles.affiliateButtonText,
+                    { color: colors.primary },
+                  ]}
+                >
+                  Kopieer Affiliate Link
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         {/* Beveiliging Section */}
-        {biometricInfo?.isSupported &&
-          renderSection(
-            LocalizationService.t('sections.security'),
-            renderFeatureButton(
-              biometricInfo.biometricType === 'faceID'
-                ? LocalizationService.t('features.biometricAuth.lockTitle')
-                : biometricInfo.biometricType === 'touchID'
-                ? LocalizationService.t('features.biometricAuth.touchID')
-                : LocalizationService.t('features.biometricAuth.biometric'),
-              biometricInfo.biometricType === 'faceID' ? 'face' : 'fingerprint',
-              () => {},
-              biometricEnabled
-                ? LocalizationService.t('features.biometricAuth.enabled')
-                : LocalizationService.t('features.biometricAuth.disabled'),
+        {renderSection(
+          LocalizationService.t('sections.security'),
+          <>
+            {biometricInfo?.isSupported &&
+              renderFeatureButton(
+                biometricInfo.biometricType === 'faceID'
+                  ? LocalizationService.t('features.biometricAuth.lockTitle')
+                  : biometricInfo.biometricType === 'touchID'
+                  ? LocalizationService.t('features.biometricAuth.touchID')
+                  : LocalizationService.t('features.biometricAuth.biometric'),
+                biometricInfo.biometricType === 'faceID'
+                  ? 'face'
+                  : 'fingerprint',
+                () => {},
+                biometricEnabled
+                  ? LocalizationService.t('features.biometricAuth.enabled')
+                  : LocalizationService.t('features.biometricAuth.disabled'),
+                true,
+                biometricEnabled,
+                handleBiometricToggle,
+              )}
+            {renderFeatureButton(
+              'Dark Mode',
+              isDark ? 'brightness-6' : 'brightness-7',
+              handleDarkModeToggle,
+              mode === 'system'
+                ? `Volgt systeem (momenteel ${isDark ? 'donker' : 'licht'})`
+                : isDark
+                ? 'Donkere modus actief'
+                : 'Lichte modus actief',
               true,
-              biometricEnabled,
-              handleBiometricToggle,
-            ),
-          )}
+              isDark,
+              enabled => setThemeMode(enabled ? 'dark' : 'light'),
+            )}
+          </>,
+        )}
 
         {/* App Features Section */}
         {renderSection(
@@ -474,15 +616,16 @@ export default function LogoutScreen() {
           <TouchableOpacity
             style={[
               styles.logoutButton,
-              currentLoading && styles.logoutButtonDisabled,
+              { backgroundColor: colors.error },
+              currentLoading && { backgroundColor: colors.textSecondary },
             ]}
             onPress={handleLogout}
             disabled={currentLoading}
             accessibilityLabel="Uitloggen"
             accessibilityHint="Uitloggen van je account"
           >
-            <Icon name="logout" size={24} color={Colors.white} />
-            <Text style={styles.logoutButtonText}>
+            <Icon name="logout" size={24} color={colors.white} />
+            <Text style={[styles.logoutButtonText, { color: colors.white }]}>
               {currentLoading
                 ? LocalizationService.t('logout.loggingOut')
                 : LocalizationService.t('logout.logout')}
@@ -500,7 +643,6 @@ export default function LogoutScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   scrollView: {
     flex: 1,
@@ -511,7 +653,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   iconContainer: {
-    backgroundColor: Colors.white,
     borderRadius: 40,
     padding: 20,
     marginBottom: 16,
@@ -524,12 +665,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: Colors.text,
     marginBottom: 16,
     textAlign: 'center',
   },
   userInfo: {
-    backgroundColor: Colors.white,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
@@ -542,13 +681,11 @@ const styles = StyleSheet.create({
   },
   userInfoLabel: {
     fontSize: 14,
-    color: Colors.textSecondary,
     marginBottom: 4,
   },
   userName: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.text,
   },
   section: {
     paddingHorizontal: 16,
@@ -557,12 +694,10 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: Colors.text,
     marginBottom: 12,
     paddingHorizontal: 8,
   },
   sectionContent: {
-    backgroundColor: Colors.white,
     borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -572,7 +707,6 @@ const styles = StyleSheet.create({
   },
   featureButton: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.border,
   },
   featureButtonContent: {
     flexDirection: 'row',
@@ -593,11 +727,9 @@ const styles = StyleSheet.create({
   featureButtonTitle: {
     fontSize: 16,
     fontWeight: '500',
-    color: Colors.text,
   },
   featureButtonSubtitle: {
     fontSize: 14,
-    color: Colors.textSecondary,
     marginTop: 2,
   },
   featureButtonRight: {
@@ -605,7 +737,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logoutButton: {
-    backgroundColor: Colors.error,
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 32,
@@ -619,18 +750,72 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  logoutButtonDisabled: {
-    backgroundColor: Colors.textSecondary,
-    shadowOpacity: 0,
-    elevation: 0,
-  },
   logoutButtonText: {
-    color: Colors.white,
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
   },
   bottomSpacing: {
     height: 100,
+  },
+  // Affiliate Link Styles
+  affiliateSection: {
+    paddingHorizontal: 16,
+    marginBottom: 24,
+  },
+  affiliateCard: {
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  affiliateHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  affiliateHeaderText: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  affiliateTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  affiliateSubtitle: {
+    fontSize: 14,
+    opacity: 0.9,
+  },
+  affiliateLink: {
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+  },
+  affiliateLinkText: {
+    fontSize: 14,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    textAlign: 'center',
+  },
+  affiliateButton: {
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  affiliateButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
   },
 });

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,25 +6,59 @@ import {
   ScrollView,
   TouchableOpacity,
   Dimensions,
+  RefreshControl,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { Colors } from '../constants/colors';
+import { getColors } from '../constants/colors';
+import { useTheme } from '../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
 export default function CategoriesScreen() {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    // Simuleer data refresh
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1000);
+  };
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={[colors.primary]}
+          tintColor={colors.primary}
+        />
+      }
+    >
       <View style={styles.categoriesGrid}>
         {categories.map((category, index) => (
-          <TouchableOpacity key={index} style={styles.categoryCard}>
+          <TouchableOpacity
+            key={index}
+            style={[styles.categoryCard, { backgroundColor: colors.card }]}
+          >
             <View
               style={[styles.categoryIcon, { backgroundColor: category.color }]}
             >
-              <Icon name={category.icon} size={40} color={Colors.white} />
+              <Icon name={category.icon} size={40} color={colors.white} />
             </View>
-            <Text style={styles.categoryTitle}>{category.name}</Text>
-            <Text style={styles.categorySubtitle}>{category.items} items</Text>
+            <Text style={[styles.categoryTitle, { color: colors.text }]}>
+              {category.name}
+            </Text>
+            <Text
+              style={[styles.categorySubtitle, { color: colors.textSecondary }]}
+            >
+              {category.items} items
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -33,30 +67,29 @@ export default function CategoriesScreen() {
 }
 
 const categories = [
-  { name: 'Groenten', icon: 'eco', color: Colors.success, items: '150+' },
-  { name: 'Fruit', icon: 'local-florist', color: Colors.accent, items: '80+' },
+  { name: 'Groenten', icon: 'eco', color: '#38A169', items: '150+' },
+  { name: 'Fruit', icon: 'local-florist', color: '#FAC500', items: '80+' },
   {
     name: 'Vlees & Vis',
     icon: 'restaurant',
-    color: Colors.primary,
+    color: '#BC1B20',
     items: '45+',
   },
-  { name: 'Zuivel', icon: 'local-drink', color: Colors.info, items: '35+' },
+  { name: 'Zuivel', icon: 'local-drink', color: '#3182CE', items: '35+' },
   {
     name: 'Brood & Banket',
     icon: 'bakery-dining',
-    color: Colors.warning,
+    color: '#D69E2E',
     items: '25+',
   },
-  { name: 'Dranken', icon: 'local-bar', color: Colors.secondary, items: '60+' },
-  { name: 'Kruiden', icon: 'spa', color: Colors.success, items: '40+' },
-  { name: 'Biologisch', icon: 'nature', color: Colors.accent, items: '90+' },
+  { name: 'Dranken', icon: 'local-bar', color: '#657177', items: '60+' },
+  { name: 'Kruiden', icon: 'spa', color: '#38A169', items: '40+' },
+  { name: 'Biologisch', icon: 'nature', color: '#FAC500', items: '90+' },
 ];
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   categoriesGrid: {
     flexDirection: 'row',
@@ -65,13 +98,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   categoryCard: {
-    backgroundColor: Colors.white,
     borderRadius: 12,
     padding: 20,
     alignItems: 'center',
     width: (width - 48) / 2,
     marginBottom: 16,
-    shadowColor: Colors.shadow,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -88,13 +120,11 @@ const styles = StyleSheet.create({
   categoryTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.text,
     textAlign: 'center',
     marginBottom: 4,
   },
   categorySubtitle: {
     fontSize: 14,
-    color: Colors.textSecondary,
     textAlign: 'center',
   },
 });

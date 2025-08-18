@@ -10,9 +10,10 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { Colors } from '../constants/colors';
+import { getColors } from '../constants/colors';
 import { RootTabParamList } from '../types/navigation';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import BackgroundLoadingManager from '../services/BackgroundLoadingManager';
 
 // Import WebView screens
@@ -59,6 +60,8 @@ const LogoutScreen = React.memo(() => {
 export default function TabNavigator() {
   const insets = useSafeAreaInsets();
   const { isAuthenticated, isGuest } = useAuth();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const backgroundManager = BackgroundLoadingManager.getInstance();
 
   // Cleanup bij unmount (zonder automatische background loading)
@@ -104,11 +107,11 @@ export default function TabNavigator() {
     () =>
       ({ route }: { route: any }) => ({
         tabBarIcon: getTabBarIconForRoute({ route }),
-        tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: Colors.gray400,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.gray400,
         tabBarStyle: {
-          backgroundColor: Colors.white,
-          borderTopColor: Colors.border,
+          backgroundColor: colors.card,
+          borderTopColor: colors.border,
           borderTopWidth: 1,
           paddingBottom: Platform.OS === 'ios' ? insets.bottom : 8,
           paddingTop: 8,
@@ -121,21 +124,22 @@ export default function TabNavigator() {
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: '600' as const,
+          color: colors.text,
         },
         headerStyle: {
-          backgroundColor: Colors.primary,
+          backgroundColor: colors.primary,
           elevation: 0,
           shadowOpacity: 0,
           paddingTop: Platform.OS === 'ios' ? insets.top : 0,
           height: Platform.OS === 'ios' ? 44 + insets.top : 56,
         },
-        headerTintColor: Colors.white,
+        headerTintColor: colors.white,
         headerTitleStyle: {
           fontWeight: '700' as const,
           fontSize: 18,
         },
       }),
-    [insets, getTabBarIconForRoute],
+    [insets, getTabBarIconForRoute, colors],
   );
 
   return (
@@ -199,6 +203,5 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Colors.background,
   },
 });
