@@ -168,12 +168,14 @@ class WordPressAPI {
       return { data, headers: response.headers };
     } catch (error) {
       console.error('WordPress API Error:', error);
-      
+
       // Specifieke error handling voor timeout
       if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('API request timeout. Controleer je internetverbinding en probeer opnieuw.');
+        throw new Error(
+          'API request timeout. Controleer je internetverbinding en probeer opnieuw.',
+        );
       }
-      
+
       throw error;
     }
   }
@@ -186,12 +188,12 @@ class WordPressAPI {
       // Test basis WordPress site met timeout
       const siteController = new AbortController();
       const siteTimeoutId = setTimeout(() => siteController.abort(), 5000);
-      
+
       const siteResponse = await fetch('https://chili-market.com/wp-json/', {
         signal: siteController.signal,
       });
       clearTimeout(siteTimeoutId);
-      
+
       if (!siteResponse.ok) {
         return {
           success: false,
@@ -202,12 +204,12 @@ class WordPressAPI {
       // Test REST API beschikbaarheid met timeout
       const apiController = new AbortController();
       const apiTimeoutId = setTimeout(() => apiController.abort(), 5000);
-      
+
       const apiResponse = await fetch(this.baseURL, {
         signal: apiController.signal,
       });
       clearTimeout(apiTimeoutId);
-      
+
       if (!apiResponse.ok) {
         return {
           success: false,
@@ -219,7 +221,7 @@ class WordPressAPI {
       console.log('Testing custom JWT Auth endpoint...');
       const jwtController = new AbortController();
       const jwtTimeoutId = setTimeout(() => jwtController.abort(), 10000);
-      
+
       const jwtResponse = await fetch(this.jwtAuthURL, {
         method: 'POST',
         headers: {
@@ -286,7 +288,8 @@ class WordPressAPI {
           console.error('JWT Auth 403 response is geen geldige JSON');
           return {
             success: false,
-            error: 'Custom JWT Auth endpoint retourneert ongeldige JSON response.',
+            error:
+              'Custom JWT Auth endpoint retourneert ongeldige JSON response.',
           };
         }
       }
@@ -297,7 +300,7 @@ class WordPressAPI {
       return { success: true };
     } catch (error) {
       console.error('Connection test failed:', error);
-      
+
       // Specifieke error handling voor timeout
       if (error instanceof Error && error.name === 'AbortError') {
         return {
@@ -305,7 +308,7 @@ class WordPressAPI {
           error: 'Verbindingsfout: timeout. Controleer je internetverbinding.',
         };
       }
-      
+
       return {
         success: false,
         error:
@@ -315,7 +318,10 @@ class WordPressAPI {
   }
 
   // Tijdelijke authenticatie methode zonder JWT
-  async loginWithoutJWT(username: string, password: string): Promise<WordPressUser> {
+  async loginWithoutJWT(
+    username: string,
+    password: string,
+  ): Promise<WordPressUser> {
     console.log('Attempting login without JWT for user:', username);
 
     try {
@@ -332,7 +338,9 @@ class WordPressAPI {
       };
 
       // Maak een tijdelijke token voor authenticatie
-      this.token = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      this.token = `temp_${Date.now()}_${Math.random()
+        .toString(36)
+        .substr(2, 9)}`;
       this.useJWT = false;
 
       // Maak een tijdelijke gebruiker object
@@ -357,10 +365,13 @@ class WordPressAPI {
 
     try {
       console.log('Requesting JWT token from custom endpoint...');
-      console.log('Request body:', JSON.stringify({
-        username: username.trim(),
-        password: '***' // Verberg wachtwoord in logs
-      }));
+      console.log(
+        'Request body:',
+        JSON.stringify({
+          username: username.trim(),
+          password: '***', // Verberg wachtwoord in logs
+        }),
+      );
 
       // Voeg timeout toe aan de fetch request
       const controller = new AbortController();
@@ -402,7 +413,10 @@ class WordPressAPI {
           try {
             const errorData = await response.json();
             console.error('JWT login error response:', errorData);
-            console.error('JWT login error details:', JSON.stringify(errorData, null, 2));
+            console.error(
+              'JWT login error details:',
+              JSON.stringify(errorData, null, 2),
+            );
             errorMessage = errorData.message || errorData.error || errorMessage;
           } catch (jsonError) {
             console.error('Failed to parse error response as JSON:', jsonError);
@@ -457,7 +471,9 @@ class WordPressAPI {
       // Controleer of we een geldige token hebben
       if (!tokenData.token) {
         console.error('JWT response bevat geen token:', tokenData);
-        throw new Error('Server retourneert geen geldige JWT token. Controleer custom JWT Auth endpoint configuratie.');
+        throw new Error(
+          'Server retourneert geen geldige JWT token. Controleer custom JWT Auth endpoint configuratie.',
+        );
       }
 
       // Bewaar token en credentials
@@ -470,13 +486,18 @@ class WordPressAPI {
 
       // Als de JWT response geen gebruikersdetails bevat, haal ze op via de API
       if (!tokenData.user?.display_name || !tokenData.user?.user_email) {
-        console.log('JWT response bevat geen gebruikersdetails, haal op via API...');
+        console.log(
+          'JWT response bevat geen gebruikersdetails, haal op via API...',
+        );
         try {
           const userDetails = await this.getCurrentUser();
           console.log('Gebruikersdetails opgehaald via API:', userDetails);
           return userDetails;
         } catch (apiError) {
-          console.error('Fout bij ophalen gebruikersdetails via API:', apiError);
+          console.error(
+            'Fout bij ophalen gebruikersdetails via API:',
+            apiError,
+          );
           // Fallback: maak een gebruiker object met beschikbare data
           return {
             id: tokenData.user?.ID || Date.now(),
@@ -505,12 +526,14 @@ class WordPressAPI {
       return user;
     } catch (error) {
       console.error('JWT login error:', error);
-      
+
       // Specifieke error handling voor timeout
       if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('Login timeout. Controleer je internetverbinding en probeer opnieuw.');
+        throw new Error(
+          'Login timeout. Controleer je internetverbinding en probeer opnieuw.',
+        );
       }
-      
+
       throw error;
     }
   }
@@ -523,7 +546,9 @@ class WordPressAPI {
 
     // Voor tijdelijke authenticatie, maak nieuwe tijdelijke token
     if (!this.useJWT) {
-      this.token = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      this.token = `temp_${Date.now()}_${Math.random()
+        .toString(36)
+        .substr(2, 9)}`;
       console.log('Tijdelijke token vernieuwd');
       return;
     }
@@ -637,8 +662,14 @@ class WordPressAPI {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        console.error('getCurrentUser API error:', response.status, response.statusText);
-        throw new Error(`Fout bij ophalen gebruikersgegevens: ${response.status}`);
+        console.error(
+          'getCurrentUser API error:',
+          response.status,
+          response.statusText,
+        );
+        throw new Error(
+          `Fout bij ophalen gebruikersgegevens: ${response.status}`,
+        );
       }
 
       const data = await response.json();
@@ -646,11 +677,13 @@ class WordPressAPI {
       return data;
     } catch (error) {
       console.error('getCurrentUser error:', error);
-      
+
       if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('Timeout bij ophalen gebruikersgegevens. Probeer opnieuw.');
+        throw new Error(
+          'Timeout bij ophalen gebruikersgegevens. Probeer opnieuw.',
+        );
       }
-      
+
       throw error;
     }
   }
@@ -817,7 +850,8 @@ class WordPressAPI {
           const jsonData = JSON.parse(responseText);
           console.log('Custom JWT Auth succesvol response:', jsonData);
           result.fullResponse = jsonData;
-          result.errorDetails = 'Custom endpoint werkt en retourneert succesvolle response';
+          result.errorDetails =
+            'Custom endpoint werkt en retourneert succesvolle response';
         } catch (e) {
           result.errorDetails = 'Response is 200 maar geen geldige JSON';
         }
