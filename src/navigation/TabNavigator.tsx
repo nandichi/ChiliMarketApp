@@ -18,15 +18,13 @@ import BackgroundLoadingManager from '../services/BackgroundLoadingManager';
 
 // Import WebView screens
 import WebViewScreen from '../screens/WebViewScreen';
+import UniversalHomeScreen from '../screens/UniversalHomeScreen';
 import LogoutScreenComponent from '../screens/LogoutScreen';
 import LoginTabScreenComponent from '../screens/LoginTabScreen';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
-// WebView screen components for each tab
-const HomeWebViewScreen = React.memo(() => (
-  <WebViewScreen url="https://chili-market.com/" />
-));
+// WebView screen components voor tabs (Home vervangen door native UniversalHomeScreen)
 
 const MarktplaatsWebViewScreen = React.memo(() => (
   <WebViewScreen url="https://chili-market.com/marktplaats/" />
@@ -146,7 +144,7 @@ export default function TabNavigator() {
     <Tab.Navigator screenOptions={screenOptions}>
       <Tab.Screen
         name="Home"
-        component={HomeWebViewScreen}
+        component={UniversalHomeScreen}
         options={{
           title: 'Home',
           headerShown: true,

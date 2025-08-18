@@ -31,8 +31,7 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Chili Market gebruikt je locatie om lokale advertenties en verkopers in je buurt te tonen.</string>
+
 	<key>NSCameraUsageDescription</key>
 	<string>Deze app heeft toegang tot de camera nodig om bestanden te kunnen selecteren en te delen.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

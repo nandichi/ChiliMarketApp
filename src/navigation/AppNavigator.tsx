@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import WebViewScreen from '../screens/WebViewScreen';
 import SplashScreen from '../components/SplashScreen';
 import BiometricLockScreen from '../components/BiometricLockScreen';
 import TabNavigator from './TabNavigator';
@@ -138,7 +139,27 @@ function AuthenticatedApp() {
         {!isAuthenticated && !isGuest ? (
           <Stack.Screen name="Login" component={LoginScreen} />
         ) : (
-          <Stack.Screen name="Main" component={TabNavigator} />
+          <>
+            <Stack.Screen name="Main" component={TabNavigator} />
+            {/* WebView route boven tabs om vanuit Home te openen */}
+            <Stack.Screen
+              name="WebView"
+              component={WebViewScreen}
+              options={({ route }: any) => ({
+                headerShown: true,
+                headerTitle: route.params?.title || 'Chili Market',
+                headerStyle: {
+                  backgroundColor: colors.primary,
+                },
+                headerTintColor: colors.white,
+                headerTitleStyle: {
+                  fontWeight: '700' as const,
+                  fontSize: 18,
+                },
+                headerBackTitle: 'Terug',
+              })}
+            />
+          </>
         )}
       </Stack.Navigator>
     </NavigationContainer>

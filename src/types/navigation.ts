@@ -11,4 +11,5 @@ export type StackParamList = {
   ProductDetail: { productId: string };
   CategoryDetail: { categoryId: string };
   Checkout: undefined;
+  WebView: { url: string; title?: string };
 };

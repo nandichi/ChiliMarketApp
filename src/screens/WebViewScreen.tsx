@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { SafeAreaView, StatusBar, StyleSheet } from 'react-native';
+import { useRoute } from '@react-navigation/native';
 import { getColors } from '../constants/colors';
 import { useTheme } from '../context/ThemeContext';
 import EnhancedWebView from '../components/EnhancedWebView';
@@ -11,9 +12,9 @@ interface WebViewScreenProps {
   url?: string;
 }
 
-export default function WebViewScreen({
-  url = CHILI_MARKET_URL,
-}: WebViewScreenProps) {
+export default function WebViewScreen({ url: propUrl }: WebViewScreenProps) {
+  const route = useRoute<any>();
+  const url = route?.params?.url || propUrl || CHILI_MARKET_URL;
   const { isDark } = useTheme();
   const colors = getColors(isDark);
 
