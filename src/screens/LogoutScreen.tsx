@@ -26,6 +26,7 @@ export default function LogoutScreen() {
     isLoading,
     setBiometricEnabled: setBiometricEnabledAuth,
     biometricEnabled: authBiometricEnabled,
+    api,
   } = useAuth();
   const { isDark, mode, setThemeMode, toggleTheme } = useTheme();
   const [currentUser, setCurrentUser] = useState(user);
@@ -119,6 +120,59 @@ export default function LogoutScreen() {
                 LocalizationService.t('logout.logoutError'),
               );
               NativeFeaturesService.triggerNotificationHaptic('error');
+              setCurrentLoading(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleDeleteAccount = () => {
+    if (currentLoading) return;
+
+    Alert.alert(
+      LocalizationService.t('accountDeletion.title'),
+      LocalizationService.t('accountDeletion.confirm'),
+      [
+        { text: LocalizationService.t('common.cancel'), style: 'cancel' },
+        {
+          text: LocalizationService.t('accountDeletion.deleteCta'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await NativeFeaturesService.triggerNotificationHaptic('warning');
+              setCurrentLoading(true);
+              await new Promise(resolve => setTimeout(resolve, 100));
+
+              // Call API to delete account (API vereist wachtwoord)
+              const creds = api.getCredentials?.() || undefined;
+              const result = await api.deleteAccount(creds?.password);
+
+              if (result?.success) {
+                await NativeFeaturesService.triggerNotificationHaptic(
+                  'success',
+                );
+                Alert.alert(
+                  LocalizationService.t('accountDeletion.successTitle'),
+                  LocalizationService.t('accountDeletion.successMessage'),
+                );
+                await logout();
+              } else {
+                throw new Error(
+                  result?.message || 'Account verwijderen is mislukt',
+                );
+              }
+            } catch (error) {
+              console.error('Delete account error:', error);
+              await NativeFeaturesService.triggerNotificationHaptic('error');
+              Alert.alert(
+                LocalizationService.t('common.error'),
+                error instanceof Error
+                  ? error.message
+                  : 'Er ging iets mis bij het verwijderen van je account.',
+              );
+            } finally {
               setCurrentLoading(false);
             }
           },
@@ -632,6 +686,30 @@ export default function LogoutScreen() {
             </Text>
           </TouchableOpacity>,
         )}
+
+        {/* Danger Zone Section */}
+        {currentUser &&
+          renderSection(
+            LocalizationService.t('sections.dangerZone'),
+            <TouchableOpacity
+              style={[
+                styles.logoutButton,
+                { backgroundColor: colors.error },
+                currentLoading && { backgroundColor: colors.textSecondary },
+              ]}
+              onPress={handleDeleteAccount}
+              disabled={currentLoading}
+              accessibilityLabel="Account verwijderen"
+              accessibilityHint="Verwijdert je account permanent"
+            >
+              <Icon name="delete-forever" size={24} color={colors.white} />
+              <Text style={[styles.logoutButtonText, { color: colors.white }]}>
+                {currentLoading
+                  ? LocalizationService.t('accountDeletion.deleting')
+                  : LocalizationService.t('accountDeletion.button')}
+              </Text>
+            </TouchableOpacity>,
+          )}
 
         {/* Bottom spacing */}
         <View style={styles.bottomSpacing} />

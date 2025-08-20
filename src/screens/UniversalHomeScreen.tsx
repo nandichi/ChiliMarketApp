@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -8,16 +8,19 @@ import {
   Dimensions,
   TextInput,
   Image,
-  ActivityIndicator,
-  RefreshControl,
+  Pressable,
+  Platform,
+  Animated,
+  Alert,
 } from 'react-native';
+import Clipboard from '@react-native-clipboard/clipboard';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
 import { Colors, getColors } from '../constants/colors';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import HapticFeedbackService from '../services/HapticFeedbackService';
-import { WordPressPost, WordPressCategory } from '../services/WordPressAPI';
+import NativeFeaturesService from '../services/NativeFeaturesService';
 
 const { width } = Dimensions.get('window');
 
@@ -27,46 +30,9 @@ export default function UniversalHomeScreen() {
   const navigation = useNavigation();
   const { isDark } = useTheme();
   const colors = getColors(isDark);
-  const { user, api } = useAuth();
+  const { user } = useAuth();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [posts, setPosts] = useState<WordPressPost[]>([]);
-  const [categories, setCategories] = useState<WordPressCategory[]>([]);
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const onRefresh = useCallback(() => {
-    loadData(true);
-  }, []);
-
-  const loadData = useCallback(
-    async (isRefresh = false) => {
-      try {
-        setError(null);
-        if (isRefresh) setRefreshing(true);
-        else setLoading(true);
-
-        const [postsResponse, cats] = await Promise.all([
-          api.getPosts({ per_page: 8 }),
-          api.getCategories({ per_page: 12, hide_empty: true }),
-        ]);
-
-        setPosts(postsResponse.data);
-        setCategories(cats);
-      } catch (e) {
-        setError('Kon inhoud niet laden. Probeer opnieuw.');
-      } finally {
-        if (isRefresh) setRefreshing(false);
-        else setLoading(false);
-      }
-    },
-    [api],
-  );
 
   const quickLinks = useMemo(
     () => [
@@ -95,20 +61,108 @@ export default function UniversalHomeScreen() {
         color: colors.secondary,
       },
       {
+        name: 'Advertenties',
+        icon: 'campaign',
+        url: `${BASE_URL}/advertenties/`,
+        color: colors.warning,
+      },
+      {
+        name: 'Affiliate Dashboard',
+        icon: 'trending-up',
+        url: `${BASE_URL}/affiliate-dashboard/?from=network`,
+        color: colors.success,
+      },
+      {
         name: 'Categorieën',
         icon: 'view-module',
         url: `${BASE_URL}/?post_type=post`,
-        color: colors.success,
+        color: colors.info,
       },
       {
         name: 'Contact',
         icon: 'contact-support',
         url: `${BASE_URL}/contact/`,
-        color: colors.warning,
+        color: colors.error,
       },
     ],
     [colors],
   );
+
+  const QuickLinkCard: React.FC<{
+    link: { name: string; icon: string; url: string; color: string };
+  }> = ({ link }) => {
+    const scaleValue = useRef(new Animated.Value(1)).current;
+
+    const handlePressIn = () => {
+      Animated.spring(scaleValue, {
+        toValue: 0.97,
+        useNativeDriver: true,
+        speed: 20,
+        bounciness: 6,
+      }).start();
+    };
+
+    const handlePressOut = () => {
+      Animated.spring(scaleValue, {
+        toValue: 1,
+        useNativeDriver: true,
+        speed: 20,
+        bounciness: 6,
+      }).start();
+    };
+
+    const handlePress = () => {
+      openInWebView(link.url, link.name);
+    };
+
+    return (
+      <Pressable
+        onPress={handlePress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        android_ripple={{ color: colors.gray200 }}
+        style={({ pressed }) => [
+          styles.quickCard,
+          {
+            backgroundColor: colors.card,
+            shadowColor: colors.shadow,
+            borderColor: isDark ? colors.borderLight : colors.border,
+            opacity: pressed ? 0.98 : 1,
+          },
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel={link.name}
+      >
+        <Animated.View
+          style={[
+            styles.quickCardInner,
+            { transform: [{ scale: scaleValue }] },
+          ]}
+        >
+          <View
+            style={[
+              styles.quickIcon,
+              { backgroundColor: link.color, shadowColor: colors.shadow },
+            ]}
+          >
+            <Icon name={link.icon as any} size={26} color={Colors.white} />
+          </View>
+          <Text
+            style={[styles.quickText, { color: colors.text }]}
+            numberOfLines={1}
+          >
+            {link.name}
+          </Text>
+          <Icon
+            name="chevron-right"
+            size={18}
+            color={colors.textSecondary}
+            style={styles.quickChevron}
+          />
+        </Animated.View>
+      </Pressable>
+    );
+  };
 
   const openInWebView = useCallback(
     async (url: string, title?: string) => {
@@ -132,32 +186,38 @@ export default function UniversalHomeScreen() {
     openInWebView(url, `Zoeken: ${q}`);
   }, [searchQuery, openInWebView]);
 
-  const getPostImage = (post: WordPressPost): string | undefined => {
-    return post._embedded?.['wp:featuredmedia']?.[0]?.source_url;
-  };
+  const handleCopyAffiliateLink = useCallback(async () => {
+    if (!user) return;
 
-  const stripHtml = (html: string) => html.replace(/<[^>]*>/g, '').trim();
+    try {
+      // Gebruik username of name als fallback
+      const referralCode = user.username || user.name || 'user';
+      const affiliateLink = `https://chili-market.com?r=${referralCode}`;
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('nl-NL', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
-  };
+      // Kopieer naar clipboard
+      await Clipboard.setString(affiliateLink);
+
+      // Trigger success haptic
+      await HapticFeedbackService.triggerForAction('success');
+
+      Alert.alert(
+        'Affiliate Link Gekopieerd!',
+        `Je persoonlijke link is gekopieerd naar het klembord:\n\n${affiliateLink}\n\nDeel deze link met vrienden en verdien commissie op hun aankopen!`,
+      );
+    } catch (error) {
+      console.error('Failed to copy affiliate link:', error);
+      await HapticFeedbackService.triggerForAction('error');
+      Alert.alert(
+        'Fout',
+        'Er is een fout opgetreden bij het kopiëren van je affiliate link. Probeer opnieuw.',
+      );
+    }
+  }, [user]);
 
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          colors={[colors.primary]}
-          tintColor={colors.primary}
-        />
-      }
+      contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
     >
       <View style={[styles.header, { backgroundColor: colors.card }]}>
@@ -208,173 +268,79 @@ export default function UniversalHomeScreen() {
         </View>
       </View>
 
+      {/* Affiliate Link Section */}
+      {user && (
+        <View style={styles.affiliateSection}>
+          <View
+            style={[styles.affiliateCard, { backgroundColor: colors.primary }]}
+          >
+            <View style={styles.affiliateHeader}>
+              <Icon name="share" size={28} color={colors.white} />
+              <View style={styles.affiliateHeaderText}>
+                <Text style={[styles.affiliateTitle, { color: colors.white }]}>
+                  Verdien Geld met Affiliate Links!
+                </Text>
+                <Text
+                  style={[styles.affiliateSubtitle, { color: colors.white }]}
+                >
+                  Deel je persoonlijke link en verdien commissie
+                </Text>
+              </View>
+            </View>
+
+            <View
+              style={[styles.affiliateLink, { backgroundColor: colors.white }]}
+            >
+              <Text
+                style={[
+                  styles.affiliateLinkText,
+                  { color: colors.textSecondary },
+                ]}
+                numberOfLines={1}
+                ellipsizeMode="middle"
+              >
+                https://chili-market.com?r=
+                {user.username || user.name || 'user'}
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={[
+                styles.affiliateButton,
+                { backgroundColor: colors.white },
+              ]}
+              onPress={handleCopyAffiliateLink}
+              activeOpacity={0.8}
+            >
+              <Icon name="content-copy" size={18} color={colors.primary} />
+              <Text
+                style={[styles.affiliateButtonText, { color: colors.primary }]}
+              >
+                Kopieer Affiliate Link
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
       <View style={styles.section}>
         <Text style={[styles.sectionTitleCentered, { color: colors.text }]}>
           Snel naar
         </Text>
+        <Text
+          style={[
+            styles.sectionSubtitleCentered,
+            { color: colors.textSecondary },
+          ]}
+        >
+          Handige snelkoppelingen
+        </Text>
         <View style={styles.quickGrid}>
           {quickLinks.map(link => (
-            <TouchableOpacity
-              key={link.name}
-              style={[
-                styles.quickCard,
-                { backgroundColor: colors.card, shadowColor: Colors.shadow },
-              ]}
-              onPress={() => openInWebView(link.url, link.name)}
-              activeOpacity={0.85}
-            >
-              <View style={[styles.quickIcon, { backgroundColor: link.color }]}>
-                <Icon name={link.icon as any} size={26} color={Colors.white} />
-              </View>
-              <Text style={[styles.quickText, { color: colors.text }]}>
-                {link.name}
-              </Text>
-            </TouchableOpacity>
+            <QuickLinkCard key={link.name} link={link} />
           ))}
         </View>
       </View>
-
-      {loading && (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-            Inhoud laden...
-          </Text>
-        </View>
-      )}
-
-      {!!error && (
-        <View
-          style={[
-            styles.errorContainer,
-            { backgroundColor: colors.card, shadowColor: Colors.shadow },
-          ]}
-        >
-          <Icon name="error-outline" size={22} color={Colors.error} />
-          <Text style={[styles.errorText, { color: Colors.error }]}>
-            {error}
-          </Text>
-          <TouchableOpacity
-            style={[styles.retryButton, { backgroundColor: colors.primary }]}
-            onPress={() => loadData()}
-          >
-            <Text style={styles.retryText}>Opnieuw proberen</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {!loading && posts.length > 0 && (
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Laatste van de site
-            </Text>
-            <TouchableOpacity
-              onPress={() => openInWebView(`${BASE_URL}/`, 'Chili Market')}
-            >
-              <Text style={[styles.seeAll, { color: colors.primary }]}>
-                Alles
-              </Text>
-            </TouchableOpacity>
-          </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.horizontalScroll}
-          >
-            {posts.map(post => (
-              <TouchableOpacity
-                key={post.id}
-                style={[
-                  styles.postCard,
-                  { backgroundColor: colors.card, shadowColor: Colors.shadow },
-                ]}
-                onPress={() =>
-                  openInWebView(post.link, stripHtml(post.title.rendered))
-                }
-                activeOpacity={0.9}
-              >
-                {getPostImage(post) ? (
-                  <Image
-                    source={{ uri: getPostImage(post) }}
-                    style={styles.postImage}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <View
-                    style={[
-                      styles.postImagePlaceholder,
-                      { backgroundColor: Colors.gray100 },
-                    ]}
-                  >
-                    <Icon name="article" size={40} color={colors.primary} />
-                  </View>
-                )}
-                <Text
-                  style={[styles.postTitle, { color: colors.text }]}
-                  numberOfLines={2}
-                >
-                  {stripHtml(post.title.rendered)}
-                </Text>
-                <Text
-                  style={[styles.postExcerpt, { color: colors.textSecondary }]}
-                  numberOfLines={3}
-                >
-                  {stripHtml(post.excerpt.rendered)}
-                </Text>
-                <Text style={[styles.postDate, { color: colors.textLight }]}>
-                  {formatDate(post.date)}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-      )}
-
-      {!loading && categories.length > 0 && (
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Populaire categorieën
-            </Text>
-            <TouchableOpacity
-              onPress={() =>
-                openInWebView(`${BASE_URL}/?post_type=post`, 'Categorieën')
-              }
-            >
-              <Text style={[styles.seeAll, { color: colors.primary }]}>
-                Alles
-              </Text>
-            </TouchableOpacity>
-          </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.horizontalScroll}
-          >
-            {categories.map(cat => (
-              <TouchableOpacity
-                key={cat.id}
-                style={[
-                  styles.catChip,
-                  { backgroundColor: colors.card, borderColor: colors.border },
-                ]}
-                onPress={() =>
-                  openInWebView(`${BASE_URL}/?cat=${cat.id}`, cat.name)
-                }
-              >
-                <Icon name="label" size={16} color={colors.primary} />
-                <Text
-                  style={[styles.catText, { color: colors.text }]}
-                  numberOfLines={1}
-                >
-                  {cat.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-      )}
 
       <View style={styles.bottomSpace} />
     </ScrollView>
@@ -384,6 +350,10 @@ export default function UniversalHomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 120,
   },
   header: {
     alignItems: 'center',
@@ -445,6 +415,7 @@ const styles = StyleSheet.create({
   },
   section: {
     marginTop: 24,
+    marginBottom: 32,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -466,6 +437,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     paddingHorizontal: 20,
   },
+  sectionSubtitleCentered: {
+    fontSize: 13,
+    fontWeight: '500',
+    textAlign: 'center',
+    opacity: 0.8,
+    marginBottom: 10,
+  },
   seeAll: {
     fontSize: 14,
     fontWeight: '600',
@@ -477,18 +455,27 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     gap: 12,
+    paddingBottom: 20,
   },
   quickCard: {
     width: (width - 52) / 2,
-    aspectRatio: 1.2,
+    aspectRatio: 1.1,
     borderRadius: 16,
     padding: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 4,
+    marginBottom: 12,
+  },
+  quickCardInner: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   quickIcon: {
     width: 56,
@@ -508,115 +495,79 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     letterSpacing: 0.1,
   },
-  loadingContainer: {
-    alignItems: 'center',
-    paddingVertical: 40,
+  quickChevron: {
+    position: 'absolute',
+    right: 12,
+    bottom: 12,
+  },
+
+  bottomSpace: {
+    height: 60,
+  },
+  // Affiliate Link Styles
+  affiliateSection: {
     paddingHorizontal: 20,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  errorContainer: {
-    marginHorizontal: 20,
     marginTop: 16,
+    marginBottom: 8,
+  },
+  affiliateCard: {
     borderRadius: 16,
     padding: 20,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-    alignItems: 'center',
-  },
-  errorText: {
-    marginVertical: 12,
-    fontSize: 15,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  retryButton: {
-    borderRadius: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    marginTop: 4,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowRadius: 12,
+    elevation: 8,
   },
-  retryText: {
-    color: Colors.white,
-    fontWeight: '600',
-    fontSize: 14,
-    letterSpacing: 0.1,
-  },
-  horizontalScroll: {
-    paddingLeft: 20,
-  },
-  postCard: {
-    width: 200,
-    borderRadius: 16,
-    padding: 16,
-    marginRight: 16,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  postImage: {
-    width: '100%',
-    height: 120,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  postImagePlaceholder: {
-    width: '100%',
-    height: 120,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  postTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    marginBottom: 6,
-    lineHeight: 20,
-    letterSpacing: 0.1,
-  },
-  postExcerpt: {
-    fontSize: 13,
-    lineHeight: 18,
-    marginBottom: 8,
-    opacity: 0.8,
-  },
-  postDate: {
-    fontSize: 12,
-    fontWeight: '500',
-    opacity: 0.6,
-  },
-  catChip: {
+  affiliateHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1.5,
-    borderRadius: 24,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    marginRight: 12,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    marginBottom: 16,
   },
-  catText: {
-    marginLeft: 8,
-    maxWidth: 160,
+  affiliateHeaderText: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  affiliateTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 4,
+    letterSpacing: 0.3,
+  },
+  affiliateSubtitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    opacity: 0.9,
+    lineHeight: 20,
+  },
+  affiliateLink: {
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+  },
+  affiliateLinkText: {
     fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: 0.1,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    textAlign: 'center',
+    fontWeight: '500',
   },
-  bottomSpace: {
-    height: 32,
+  affiliateButton: {
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  affiliateButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginLeft: 8,
+    letterSpacing: 0.2,
   },
 });
