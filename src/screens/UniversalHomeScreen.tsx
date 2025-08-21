@@ -21,6 +21,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import HapticFeedbackService from '../services/HapticFeedbackService';
 import NativeFeaturesService from '../services/NativeFeaturesService';
+import SocialShareButtons from '../components/SocialShareButtons';
 
 const { width } = Dimensions.get('window');
 
@@ -220,7 +221,15 @@ export default function UniversalHomeScreen() {
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
     >
-      <View style={[styles.header, { backgroundColor: colors.card }]}>
+      <View
+        style={[
+          styles.header,
+          {
+            backgroundColor: colors.card,
+            borderBottomColor: isDark ? colors.border : Colors.gray100,
+          },
+        ]}
+      >
         <Image
           source={require('../../ChiliMarket-Logo.png')}
           style={styles.logo}
@@ -240,7 +249,7 @@ export default function UniversalHomeScreen() {
       <View
         style={[
           styles.searchContainer,
-          { backgroundColor: colors.primaryLight },
+          { backgroundColor: isDark ? colors.surface : colors.primaryLight },
         ]}
       >
         <View
@@ -272,16 +281,37 @@ export default function UniversalHomeScreen() {
       {user && (
         <View style={styles.affiliateSection}>
           <View
-            style={[styles.affiliateCard, { backgroundColor: colors.primary }]}
+            style={[
+              styles.affiliateCard,
+              isDark
+                ? {
+                    backgroundColor: colors.card,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                  }
+                : { backgroundColor: colors.primary },
+            ]}
           >
             <View style={styles.affiliateHeader}>
-              <Icon name="share" size={28} color={colors.white} />
+              <Icon
+                name="share"
+                size={28}
+                color={isDark ? colors.primary : colors.white}
+              />
               <View style={styles.affiliateHeaderText}>
-                <Text style={[styles.affiliateTitle, { color: colors.white }]}>
+                <Text
+                  style={[
+                    styles.affiliateTitle,
+                    { color: isDark ? colors.text : colors.white },
+                  ]}
+                >
                   Verdien Geld met Affiliate Links!
                 </Text>
                 <Text
-                  style={[styles.affiliateSubtitle, { color: colors.white }]}
+                  style={[
+                    styles.affiliateSubtitle,
+                    { color: isDark ? colors.textSecondary : colors.white },
+                  ]}
                 >
                   Deel je persoonlijke link en verdien commissie
                 </Text>
@@ -289,12 +319,18 @@ export default function UniversalHomeScreen() {
             </View>
 
             <View
-              style={[styles.affiliateLink, { backgroundColor: colors.white }]}
+              style={[
+                styles.affiliateLink,
+                {
+                  backgroundColor: isDark ? colors.surface : colors.white,
+                  borderColor: isDark ? colors.border : 'rgba(0,0,0,0.05)',
+                },
+              ]}
             >
               <Text
                 style={[
                   styles.affiliateLinkText,
-                  { color: colors.textSecondary },
+                  { color: isDark ? colors.text : colors.textSecondary },
                 ]}
                 numberOfLines={1}
                 ellipsizeMode="middle"
@@ -307,7 +343,11 @@ export default function UniversalHomeScreen() {
             <TouchableOpacity
               style={[
                 styles.affiliateButton,
-                { backgroundColor: colors.white },
+                {
+                  backgroundColor: isDark ? colors.surface : colors.white,
+                  borderWidth: isDark ? 1 : 0,
+                  borderColor: isDark ? colors.border : undefined,
+                },
               ]}
               onPress={handleCopyAffiliateLink}
               activeOpacity={0.8}
@@ -319,6 +359,17 @@ export default function UniversalHomeScreen() {
                 Kopieer Affiliate Link
               </Text>
             </TouchableOpacity>
+
+            <SocialShareButtons
+              affiliateLink={`https://chili-market.com?r=${
+                user.username || user.name || 'user'
+              }`}
+              shareText="Verdien geld met Chili Market! Gebruik mijn affiliate link"
+              variant={isDark ? 'default' : 'onPrimary'}
+              showTitle={false}
+              showLabels={false}
+              size="small"
+            />
           </View>
         </View>
       )}

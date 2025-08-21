@@ -18,6 +18,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import NativeFeaturesService from '../services/NativeFeaturesService';
 import LocalizationService from '../services/LocalizationService';
+import SocialShareButtons from '../components/SocialShareButtons';
 
 export default function LogoutScreen() {
   const {
@@ -475,15 +476,37 @@ export default function LogoutScreen() {
             {LocalizationService.t('logout.title')}
           </Text>
           {currentUser && (
-            <View style={[styles.userInfo, { backgroundColor: colors.card }]}>
+            <View
+              style={[
+                styles.userInfo,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
+              accessibilityRole="text"
+              accessibilityLabel={`${LocalizationService.t(
+                'logout.loggedInAs',
+              )} ${currentUser.name || currentUser.username}`}
+            >
+              <View
+                style={[styles.statusDot, { backgroundColor: colors.success }]}
+              />
               <Text
                 style={[styles.userInfoLabel, { color: colors.textSecondary }]}
               >
                 {LocalizationService.t('logout.loggedInAs')}
               </Text>
-              <Text style={[styles.userName, { color: colors.text }]}>
-                {currentUser.name || currentUser.username}
-              </Text>
+              <View
+                style={[
+                  styles.userNameChip,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                  },
+                ]}
+              >
+                <Text style={[styles.userNameChipText, { color: colors.text }]}>
+                  {currentUser.name || currentUser.username}
+                </Text>
+              </View>
             </View>
           )}
         </View>
@@ -548,6 +571,17 @@ export default function LogoutScreen() {
                   Kopieer Affiliate Link
                 </Text>
               </TouchableOpacity>
+
+              <SocialShareButtons
+                affiliateLink={`https://chili-market.com?r=${
+                  currentUser.username || currentUser.name || 'user'
+                }`}
+                shareText="Verdien geld met Chili Market! Gebruik mijn affiliate link"
+                variant="onPrimary"
+                showTitle={false}
+                showLabels={false}
+                size="small"
+              />
             </View>
           </View>
         )}
@@ -748,8 +782,10 @@ const styles = StyleSheet.create({
   },
   userInfo: {
     borderRadius: 12,
-    padding: 16,
+    padding: 12,
     alignItems: 'center',
+    flexDirection: 'row',
+    borderWidth: StyleSheet.hairlineWidth,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -759,7 +795,24 @@ const styles = StyleSheet.create({
   },
   userInfoLabel: {
     fontSize: 14,
-    marginBottom: 4,
+    marginRight: 8,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  userNameChip: {
+    borderRadius: 16,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    marginLeft: 4,
+  },
+  userNameChipText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   userName: {
     fontSize: 16,

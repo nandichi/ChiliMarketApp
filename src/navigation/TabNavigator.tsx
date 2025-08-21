@@ -131,8 +131,9 @@ export default function TabNavigator() {
           paddingTop: Platform.OS === 'ios' ? insets.top : 0,
           height: Platform.OS === 'ios' ? 44 + insets.top : 56,
         },
-        headerTintColor: colors.white,
+        headerTintColor: colors.textOnPrimary,
         headerTitleStyle: {
+          color: colors.textOnPrimary,
           fontWeight: '700' as const,
           fontSize: 18,
         },

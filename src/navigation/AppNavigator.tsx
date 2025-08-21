@@ -151,8 +151,9 @@ function AuthenticatedApp() {
                 headerStyle: {
                   backgroundColor: colors.primary,
                 },
-                headerTintColor: colors.white,
+                headerTintColor: colors.textOnPrimary,
                 headerTitleStyle: {
+                  color: colors.textOnPrimary,
                   fontWeight: '700' as const,
                   fontSize: 18,
                 },
