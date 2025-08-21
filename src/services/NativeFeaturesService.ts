@@ -1,5 +1,5 @@
 /**
- * Service for accessing native iOS features
+ * Service for accessing native iOS and Android features
  */
 
 import { NativeModules, Platform } from 'react-native';
@@ -27,14 +27,16 @@ const { NativeFeatures, KeychainModule } = NativeModules as {
 
 class NativeFeaturesService {
   /**
-   * Check if native features are available (iOS only)
+   * Check if native features are available (iOS and Android)
    */
   isAvailable(): boolean {
-    return Platform.OS === 'ios' && !!NativeFeatures;
+    return (
+      (Platform.OS === 'ios' || Platform.OS === 'android') && !!NativeFeatures
+    );
   }
 
   /**
-   * Show iOS share sheet
+   * Show share sheet (iOS and Android)
    */
   async showShareSheet(
     text: string = '',
@@ -97,7 +99,7 @@ class NativeFeaturesService {
   }
 
   /**
-   * Trigger impact haptic feedback
+   * Trigger impact haptic feedback (iOS and Android)
    */
   async triggerImpactHaptic(
     style: 'light' | 'medium' | 'heavy' = 'medium',
@@ -105,11 +107,16 @@ class NativeFeaturesService {
     if (!this.isAvailable()) {
       return { success: false };
     }
-    return NativeFeatures.triggerImpactHaptic(style);
+    try {
+      return await NativeFeatures.triggerImpactHaptic(style);
+    } catch (error) {
+      console.log('Haptic feedback not available:', error);
+      return { success: false };
+    }
   }
 
   /**
-   * Trigger notification haptic feedback
+   * Trigger notification haptic feedback (iOS and Android)
    */
   async triggerNotificationHaptic(
     type: 'success' | 'warning' | 'error' = 'success',
@@ -117,7 +124,12 @@ class NativeFeaturesService {
     if (!this.isAvailable()) {
       return { success: false };
     }
-    return NativeFeatures.triggerNotificationHaptic(type);
+    try {
+      return await NativeFeatures.triggerNotificationHaptic(type);
+    } catch (error) {
+      console.log('Haptic feedback not available:', error);
+      return { success: false };
+    }
   }
 
   /**
