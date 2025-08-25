@@ -122,6 +122,7 @@
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				00EEFC60759A1932668264C0 /* [CP] Embed Pods Frameworks */,
 				E235C05ADACE081382539298 /* [CP] Copy Pods Resources */,
+				F1234567890ABCDEF1234567 /* Generate Hermes dSYM */,
 			);
 			buildRules = (
 			);
@@ -255,6 +256,21 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-ChiliMarketApp/Pods-ChiliMarketApp-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		F1234567890ABCDEF1234567 /* Generate Hermes dSYM */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Generate Hermes dSYM";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Generate Hermes dSYM for App Store uploads\nif [ \"$CONFIGURATION\" = \"Release\" ]; then\n  # Check if USE_HERMES is enabled\n  if [ \"$USE_HERMES\" = \"true\" ]; then\n    echo \"Generating Hermes dSYM for Release build...\"\n    \n    # Find the hermes.framework in the built app\n    HERMES_FRAMEWORK=\"$BUILT_PRODUCTS_DIR/$PRODUCT_NAME.app/Frameworks/hermes.framework\"\n    \n    if [ -d \"$HERMES_FRAMEWORK\" ]; then\n      echo \"Found Hermes framework at: $HERMES_FRAMEWORK\"\n      \n      # Generate dSYM for hermes.framework\n      HERMES_DSYM=\"$DWARF_DSYM_FOLDER_PATH/hermes.framework.dSYM\"\n      \n      if [ ! -d \"$HERMES_DSYM\" ]; then\n        echo \"Generating dSYM for Hermes...\"\n        dsymutil \"$HERMES_FRAMEWORK/hermes\" -o \"$HERMES_DSYM\"\n        \n        if [ $? -eq 0 ]; then\n          echo \"Successfully generated Hermes dSYM at: $HERMES_DSYM\"\n        else\n          echo \"Failed to generate Hermes dSYM\"\n        fi\n      else\n        echo \"Hermes dSYM already exists at: $HERMES_DSYM\"\n      fi\n    else\n      echo \"Hermes framework not found at expected location\"\n    fi\n  else\n    echo \"Hermes is not enabled, skipping dSYM generation\"\n  fi\nelse\n  echo \"Skipping Hermes dSYM generation for non-Release build\"\nfi\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
