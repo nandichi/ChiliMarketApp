@@ -21,8 +21,7 @@
     "security": "Security",
     "appFeatures": "App Features",
     "systemInfo": "System & Info",
-    "feedback": "Feedback",
-    "dangerZone": "Danger zone"
+    "feedback": "Feedback"
   },
   "features": {
     "biometricAuth": {
@@ -104,15 +103,7 @@
       "subtitle": "View the terms of service"
     }
   },
-  "accountDeletion": {
-    "title": "Delete account",
-    "confirm": "Are you sure you want to permanently delete your account? This action cannot be undone.",
-    "deleteCta": "Delete",
-    "button": "Delete account",
-    "deleting": "Deleting…",
-    "successTitle": "Account deleted",
-    "successMessage": "Your account has been deleted."
-  },
+
   "errors": {
     "featureFailed": "%s failed. Please try again.",
     "notAvailable": "This feature is not available on this platform"

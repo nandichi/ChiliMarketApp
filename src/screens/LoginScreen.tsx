@@ -16,7 +16,6 @@ import { getColors, Colors } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import HapticFeedbackService from '../services/HapticFeedbackService';
-import ContextMenu from '../components/ContextMenu';
 
 const { width } = Dimensions.get('window');
 
@@ -180,45 +179,6 @@ export default function LoginScreen() {
           </View>
         )}
       </View>
-
-      <ContextMenu
-        options={[
-          {
-            title: 'Open Website',
-            systemIcon: 'safari',
-            onPress: async () => {
-              await HapticFeedbackService.triggerForAction('navigation');
-              // Website openen functionaliteit
-            },
-          },
-          {
-            title: 'Contacteer Support',
-            systemIcon: 'mail',
-            onPress: async () => {
-              await HapticFeedbackService.triggerForAction('button_press');
-              // Support contact functionaliteit
-            },
-          },
-          {
-            title: 'App Info',
-            systemIcon: 'info.circle',
-            onPress: async () => {
-              await HapticFeedbackService.triggerForAction('selection');
-              // App info tonen
-            },
-          },
-        ]}
-        title="Extra Opties"
-        subtitle="Kies een actie"
-        style={styles.websiteButton}
-      >
-        <TouchableOpacity style={styles.websiteButtonInner}>
-          <Icon name="web" size={20} color={colors.primary} />
-          <Text style={[styles.websiteButtonText, { color: colors.primary }]}>
-            Ga naar website
-          </Text>
-        </TouchableOpacity>
-      </ContextMenu>
     </ScrollView>
   );
 }
@@ -361,21 +321,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  websiteButton: {
-    marginTop: 24,
-  },
-  websiteButtonInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-  },
-  websiteButtonText: {
-    color: Colors.primary,
-    fontSize: 16,
-    fontWeight: '500',
-    marginLeft: 8,
-  },
   loadingContainer: {
     flexDirection: 'row',
     alignItems: 'center',

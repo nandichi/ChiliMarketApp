@@ -21,8 +21,7 @@
     "security": "Beveiliging",
     "appFeatures": "App-functies",
     "systemInfo": "Systeem & Info",
-    "feedback": "Feedback",
-    "dangerZone": "Gevaarlijke acties"
+    "feedback": "Feedback"
   },
   "features": {
     "biometricAuth": {
@@ -104,15 +103,7 @@
       "subtitle": "Bekijk de gebruiksvoorwaarden"
     }
   },
-  "accountDeletion": {
-    "title": "Account verwijderen",
-    "confirm": "Weet je zeker dat je je account permanent wilt verwijderen? Dit kan niet ongedaan worden gemaakt.",
-    "deleteCta": "Verwijderen",
-    "button": "Account verwijderen",
-    "deleting": "Bezig…",
-    "successTitle": "Account verwijderd",
-    "successMessage": "Je account is verwijderd."
-  },
+
   "errors": {
     "featureFailed": "%s is mislukt. Probeer opnieuw.",
     "notAvailable": "Deze functie is niet beschikbaar op dit platform"
