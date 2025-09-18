@@ -17,6 +17,7 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import com.facebook.react.bridge.*
 import com.facebook.react.modules.core.DeviceEventManagerModule
+import com.facebook.react.bridge.ActivityEventListener
 import java.util.concurrent.Executor
 import android.content.pm.ApplicationInfo
 import android.os.Bundle
@@ -43,8 +44,21 @@ import android.content.pm.ResolveInfo
 import java.io.File
 import android.provider.MediaStore
 import android.database.Cursor
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 
 class NativeFeaturesModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
+    
+    init {
+        // Listen for activity results from MainActivity
+        reactContext.addActivityEventListener(object : ActivityEventListener {
+            override fun onActivityResult(activity: Activity, requestCode: Int, resultCode: Int, data: Intent?) {
+                handleActivityResult(requestCode, resultCode, data)
+            }
+            
+            override fun onNewIntent(intent: Intent) {}
+        })
+    }
     
     companion object {
         private const val MODULE_NAME = "NativeFeatures"
@@ -53,11 +67,12 @@ class NativeFeaturesModule(reactContext: ReactApplicationContext) : ReactContext
         private const val REQUEST_CODE_BIOMETRIC = 1001
         private const val REQUEST_CODE_FILE_PICKER = 1002
         private const val REQUEST_CODE_CAMERA_PERMISSION = 1003
-        private const val REQUEST_CODE_STORAGE_PERMISSION = 1004
+        private const val REQUEST_CODE_PHOTO_PICKER = 1005
     }
     
     private var currentBiometricPromise: Promise? = null
     private var currentFilePickerPromise: Promise? = null
+    private var currentPhotoPickerPromise: Promise? = null
     
     override fun getName(): String = MODULE_NAME
     
@@ -441,33 +456,23 @@ class NativeFeaturesModule(reactContext: ReactApplicationContext) : ReactContext
     }
     
     @ReactMethod
-    fun checkPhotosPermission(promise: Promise) {
+    fun checkPhotoPickerAvailability(promise: Promise) {
         try {
-            val context = reactApplicationContext
-            val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                Manifest.permission.READ_MEDIA_IMAGES
-            } else {
-                Manifest.permission.READ_EXTERNAL_STORAGE
-            }
-            val status = ContextCompat.checkSelfPermission(context, permission)
-            
             val result = Arguments.createMap().apply {
-                putString("status", when (status) {
-                    PackageManager.PERMISSION_GRANTED -> "granted"
-                    PackageManager.PERMISSION_DENIED -> "denied"
-                    else -> "notDetermined"
-                })
-                putBoolean("granted", status == PackageManager.PERMISSION_GRANTED)
+                // Android Photo Picker is available from Android 11 (API 30) and above
+                putBoolean("isAvailable", Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+                putBoolean("requiresPermission", false) // Photo Picker doesn't require permissions
+                putString("status", if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) "available" else "legacy")
             }
             
             promise.resolve(result)
         } catch (e: Exception) {
-            promise.reject("PERMISSION_ERROR", "Failed to check photos permission: ${e.message}", e)
+            promise.reject("AVAILABILITY_ERROR", "Failed to check photo picker availability: ${e.message}", e)
         }
     }
     
     @ReactMethod
-    fun requestPhotosPermission(promise: Promise) {
+    fun openPhotoPicker(maxSelection: Int, mediaType: String, promise: Promise) {
         try {
             val activity = currentActivity
             if (activity == null) {
@@ -475,24 +480,56 @@ class NativeFeaturesModule(reactContext: ReactApplicationContext) : ReactContext
                 return
             }
             
-            val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                Manifest.permission.READ_MEDIA_IMAGES
+            currentPhotoPickerPromise = promise
+            
+            // Use Android Photo Picker for Android 11+ (API 30+)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                val mimeType = when (mediaType.lowercase()) {
+                    "images" -> "image/*"
+                    "videos" -> "video/*"
+                    "both", "all" -> "*/*"
+                    else -> "image/*"
+                }
+                
+                val intent = Intent(Intent.ACTION_PICK).apply {
+                    type = mimeType
+                    if (maxSelection > 1 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                        putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                    }
+                }
+                
+                if (intent.resolveActivity(activity.packageManager) != null) {
+                    activity.startActivityForResult(intent, REQUEST_CODE_PHOTO_PICKER)
+                } else {
+                    promise.reject("NO_PHOTO_PICKER", "Photo picker not available", null)
+                }
             } else {
-                Manifest.permission.READ_EXTERNAL_STORAGE
+                // Fallback for older Android versions using traditional file picker
+                val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                    type = when (mediaType.lowercase()) {
+                        "images" -> "image/*"
+                        "videos" -> "video/*"
+                        "both", "all" -> "*/*"
+                        else -> "image/*"
+                    }
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    if (maxSelection > 1) {
+                        putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                    }
+                }
+                
+                if (intent.resolveActivity(activity.packageManager) != null) {
+                    activity.startActivityForResult(
+                        Intent.createChooser(intent, "Selecteer bestanden"),
+                        REQUEST_CODE_PHOTO_PICKER
+                    )
+                } else {
+                    promise.reject("NO_FILE_PICKER", "File picker not available", null)
+                }
             }
             
-            ActivityCompat.requestPermissions(
-                activity,
-                arrayOf(permission),
-                REQUEST_CODE_STORAGE_PERMISSION
-            )
-            
-            promise.resolve(Arguments.createMap().apply {
-                putBoolean("requested", true)
-            })
-            
         } catch (e: Exception) {
-            promise.reject("PERMISSION_ERROR", "Failed to request photos permission: ${e.message}", e)
+            promise.reject("PHOTO_PICKER_ERROR", "Failed to open photo picker: ${e.message}", e)
         }
     }
     
@@ -658,5 +695,131 @@ class NativeFeaturesModule(reactContext: ReactApplicationContext) : ReactContext
             EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
         )
+    }
+    
+    // Handle activity results from MainActivity
+    private fun handleActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        when (requestCode) {
+            REQUEST_CODE_PHOTO_PICKER -> {
+                handlePhotoPickerResult(resultCode, data)
+            }
+            REQUEST_CODE_FILE_PICKER -> {
+                handleFilePickerResult(resultCode, data)
+            }
+        }
+    }
+    
+    private fun handlePhotoPickerResult(resultCode: Int, data: Intent?) {
+        val promise = currentPhotoPickerPromise
+        currentPhotoPickerPromise = null
+        
+        if (promise == null) {
+            return
+        }
+        
+        if (resultCode == Activity.RESULT_OK && data != null) {
+            try {
+                val result = Arguments.createMap()
+                val selectedFiles = Arguments.createArray()
+                
+                if (data.clipData != null) {
+                    // Multiple selection
+                    val clipData = data.clipData!!
+                    for (i in 0 until clipData.itemCount) {
+                        val uri = clipData.getItemAt(i).uri
+                        val fileInfo = getFileInfoFromUri(uri)
+                        selectedFiles.pushMap(fileInfo)
+                    }
+                } else if (data.data != null) {
+                    // Single selection
+                    val uri = data.data!!
+                    val fileInfo = getFileInfoFromUri(uri)
+                    selectedFiles.pushMap(fileInfo)
+                }
+                
+                result.putArray("files", selectedFiles)
+                result.putBoolean("cancelled", false)
+                promise.resolve(result)
+                
+            } catch (e: Exception) {
+                promise.reject("PHOTO_PICKER_ERROR", "Failed to process selected files: ${e.message}", e)
+            }
+        } else {
+            // User cancelled or error occurred
+            val result = Arguments.createMap().apply {
+                putBoolean("cancelled", true)
+                putArray("files", Arguments.createArray())
+            }
+            promise.resolve(result)
+        }
+    }
+    
+    private fun handleFilePickerResult(resultCode: Int, data: Intent?) {
+        val promise = currentFilePickerPromise
+        currentFilePickerPromise = null
+        
+        if (promise == null) {
+            return
+        }
+        
+        if (resultCode == Activity.RESULT_OK && data != null) {
+            try {
+                val uri = data.data
+                if (uri != null) {
+                    val fileInfo = getFileInfoFromUri(uri)
+                    promise.resolve(fileInfo)
+                } else {
+                    promise.reject("NO_FILE_SELECTED", "No file was selected", null)
+                }
+            } catch (e: Exception) {
+                promise.reject("FILE_PICKER_ERROR", "Failed to process selected file: ${e.message}", e)
+            }
+        } else {
+            promise.reject("FILE_PICKER_CANCELLED", "File picker was cancelled", null)
+        }
+    }
+    
+    private fun getFileInfoFromUri(uri: Uri): WritableMap {
+        val context = reactApplicationContext
+        val fileInfo = Arguments.createMap()
+        
+        fileInfo.putString("uri", uri.toString())
+        
+        try {
+            val cursor = context.contentResolver.query(uri, null, null, null, null)
+            cursor?.use {
+                if (it.moveToFirst()) {
+                    val nameIndex = it.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                    val sizeIndex = it.getColumnIndex(android.provider.OpenableColumns.SIZE)
+                    
+                    if (nameIndex != -1) {
+                        val name = it.getString(nameIndex)
+                        fileInfo.putString("name", name ?: "unknown")
+                        
+                        // Extract file extension
+                        val extension = name?.substringAfterLast('.', "") ?: ""
+                        fileInfo.putString("type", extension)
+                    }
+                    
+                    if (sizeIndex != -1) {
+                        val size = it.getLong(sizeIndex)
+                        fileInfo.putDouble("size", size.toDouble())
+                    }
+                }
+            }
+            
+            // Get MIME type
+            val mimeType = context.contentResolver.getType(uri)
+            fileInfo.putString("mimeType", mimeType ?: "unknown")
+            
+        } catch (e: Exception) {
+            // Fallback values
+            fileInfo.putString("name", "unknown")
+            fileInfo.putString("type", "unknown")
+            fileInfo.putDouble("size", 0.0)
+            fileInfo.putString("mimeType", "unknown")
+        }
+        
+        return fileInfo
     }
 }

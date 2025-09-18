@@ -181,17 +181,25 @@ export default function LogoutScreen() {
       }
     });
 
-  const handlePhotosPermission = () =>
-    handleFeature("Foto's Toestemming", async () => {
-      const status = await NativeFeaturesService.checkPhotosPermission();
-      if (status.status === 'notDetermined') {
-        const result = await NativeFeaturesService.requestPhotosPermission();
-        Alert.alert(
-          "Foto's Toestemming",
-          result.granted ? 'Toegang verleend!' : 'Toegang geweigerd',
-        );
+  const handlePhotoPicker = () =>
+    handleFeature('Foto Picker', async () => {
+      const availability =
+        await NativeFeaturesService.checkPhotoPickerAvailability();
+      if (availability.isAvailable) {
+        const result = await NativeFeaturesService.openPhotoPicker(3, 'images');
+        if (!result.cancelled && result.files.length > 0) {
+          Alert.alert(
+            'Foto Picker',
+            `${result.files.length} foto(s) geselecteerd!\n\nGeen permissies vereist - Android Photo Picker gebruikt.`,
+          );
+        } else {
+          Alert.alert('Foto Picker', 'Geen foto geselecteerd');
+        }
       } else {
-        Alert.alert("Foto's Toestemming", `Huidige status: ${status.status}`);
+        Alert.alert(
+          'Foto Picker',
+          'Android Photo Picker niet beschikbaar op dit apparaat. Gebruikt legacy bestandskiezer.',
+        );
       }
     });
 
@@ -595,10 +603,10 @@ export default function LogoutScreen() {
               'Beheer camera toegang',
             )}
             {renderFeatureButton(
-              "Foto's Toestemming",
+              'Foto Picker (Geen Permissies)',
               'photo-library',
-              handlePhotosPermission,
-              "Beheer foto's toegang",
+              handlePhotoPicker,
+              'Test Android Photo Picker functionaliteit',
             )}
             {systemInfo &&
               renderFeatureButton(

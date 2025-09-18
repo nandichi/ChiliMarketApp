@@ -17,6 +17,8 @@ import {
   BiometricSupportResult,
   BiometricAuthResult,
   SystemInfo,
+  PhotoPickerResult,
+  PhotoPickerAvailability,
 } from '../types/NativeFeatures';
 import type { KeychainModule } from '../types/NativeFeatures';
 
@@ -69,16 +71,6 @@ class NativeFeaturesService {
   }
 
   /**
-   * Check photos permission status
-   */
-  async checkPhotosPermission(): Promise<PermissionStatus> {
-    if (!this.isAvailable()) {
-      throw new Error('Native features not available on this platform');
-    }
-    return NativeFeatures.checkPhotosPermission();
-  }
-
-  /**
    * Request camera permission
    */
   async requestCameraPermission(): Promise<PermissionResult> {
@@ -89,13 +81,30 @@ class NativeFeaturesService {
   }
 
   /**
-   * Request photos permission
+   * Check Photo Picker availability (replaces photos permission)
    */
-  async requestPhotosPermission(): Promise<PermissionResult> {
+  async checkPhotoPickerAvailability(): Promise<PhotoPickerAvailability> {
+    if (!this.isAvailable()) {
+      return {
+        isAvailable: false,
+        requiresPermission: true,
+        status: 'legacy',
+      };
+    }
+    return NativeFeatures.checkPhotoPickerAvailability();
+  }
+
+  /**
+   * Open Photo Picker for selecting images and videos (no permissions required)
+   */
+  async openPhotoPicker(
+    maxSelection: number = 1,
+    mediaType: 'images' | 'videos' | 'both' | 'all' = 'images',
+  ): Promise<PhotoPickerResult> {
     if (!this.isAvailable()) {
       throw new Error('Native features not available on this platform');
     }
-    return NativeFeatures.requestPhotosPermission();
+    return NativeFeatures.openPhotoPicker(maxSelection, mediaType);
   }
 
   /**

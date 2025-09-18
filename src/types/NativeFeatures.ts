@@ -13,6 +13,25 @@ export interface FilePickerResult {
   cancelled?: boolean;
 }
 
+export interface PhotoPickerFile {
+  uri: string;
+  name: string;
+  type: string;
+  size: number;
+  mimeType: string;
+}
+
+export interface PhotoPickerResult {
+  files: PhotoPickerFile[];
+  cancelled: boolean;
+}
+
+export interface PhotoPickerAvailability {
+  isAvailable: boolean;
+  requiresPermission: boolean;
+  status: 'available' | 'legacy';
+}
+
 export interface PermissionStatus {
   status:
     | 'authorized'
@@ -79,11 +98,16 @@ export interface NativeFeaturesModule {
   // File Picker
   showFilePicker(): Promise<FilePickerResult>;
 
-  // Camera/Photos Permissions
+  // Camera Permission
   checkCameraPermission(): Promise<PermissionStatus>;
-  checkPhotosPermission(): Promise<PermissionStatus>;
   requestCameraPermission(): Promise<PermissionResult>;
-  requestPhotosPermission(): Promise<PermissionResult>;
+
+  // Photo Picker (replaces photo permissions)
+  checkPhotoPickerAvailability(): Promise<PhotoPickerAvailability>;
+  openPhotoPicker(
+    maxSelection: number,
+    mediaType: 'images' | 'videos' | 'both' | 'all',
+  ): Promise<PhotoPickerResult>;
 
   // Haptics
   triggerImpactHaptic(
